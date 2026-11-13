@@ -2230,6 +2230,59 @@ async function sweepStore(){try{if(PL.some(x=>!x.d))return;const keys=await kv('
 /* the edit hint shows briefly, then fades so it never hides the card's last line */
 document.head.append(Object.assign(document.createElement('style'),{textContent:'.hinted .stc .hint{display:none}.nav3 .fab{display:flex!important;align-items:center;justify-content:center;padding:0!important;gap:0!important}.nav3 .fab .ic{margin:0!important;stroke-width:2.6}.nav3 .fab>*:not(.ic){display:none}'}));{let hT=0;setInterval(()=>{if(!hT&&document.querySelector('.stc .hint'))hT=setTimeout(()=>document.body.classList.add('hinted'),4000);},500);}
 
+/* ---------- videos: the film waits for songs and video messages; video frames keep moving on iPad ---------- */
+/* iPad Safari only paints frames of a video that is in the page: keep playing media in a tiny, invisible holder */
+const MHOLD=(()=>{const d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;overflow:hidden;pointer-events:none;z-index:-1';document.body.append(d);return d;})();
+{const pm=playMedia;playMedia=function(id,kind,onend){const el=pm(id,kind,onend);if(el&&el.tagName==='VIDEO'){el.muted=false;el.style.cssText='width:2px;height:2px';MHOLD.append(el);el.addEventListener('ended',()=>{el._done=1;});el.addEventListener('error',()=>{el._done=1;});}else if(el&&el.tagName==='AUDIO'){el.addEventListener('ended',()=>{el._done=1;});el.addEventListener('error',()=>{el._done=1;});}return el;};}
+{const sm=stopMedia;stopMedia=function(el){sm(el);if(el&&el.parentNode===MHOLD)el.remove();};}
+
+/* the party film: each part runs to its natural end */
+FILMOK.push('candles');
+filmDrive=function(){const F=Show.film,now=performance.now();if(!F||!F.mr||Show.tr)return;
+ if(Show.idle){if(!F.w)F.w=now;if(now-F.w>(Show.next?1200:2500)){F.w=0;if(Show.next<Show.parts.length)pStart(Show.next);else{Show.film=null;F.mr.onstop=()=>{endParty();result(new Blob(F.ch,{type:F.mime.split(';')[0]}),F.mime.includes('mp4')?'mp4':'webm');};F.mr.stop();}}return;}
+ const id=Show.parts[Show.i],p=Show.cur,t=Show.pt;if(!p)return;if(F.pid!==p){F.pid=p;F.c=t;F.tp=0;}const lt=t-F.c;
+ if(t>480){pIdle(1);return;}
+ if(id==='wishes'){const x=p.L&&p.L[p.i];if(!x){pIdle(1);return;}const el=p.el,md=!!el;
+  const done=md?(el._done||el.ended||(el.paused&&lt>3&&el.currentTime>0)||(lt>4&&!(el.duration>0))):lt>Math.min(9,3.5+((x.m||'').length*.06));
+  if(done&&(!md||F.tp?now-F.tp>1500:(F.tp=now,false))){F.tp=0;if(!p.cue())pIdle(1);else F.c=t;}return;}
+ if(id==='story'){if(lt>6){if(!(p.cue&&p.cue()))pIdle(1);else F.c=t;}return;}
+ if(id==='candles'){const d=p.cu?songDur():0,go=d?musEl.currentTime>=d-(p.n*.7+3):t>4;if(go&&p.out<p.n&&(!F.tp||now-F.tp>700)){F.tp=now;p.tap();}return;}
+ if(p.over)return;
+ const lim=id==='thanks'?8:id==='wall'?12:15;if(lt>lim)pIdle(1);};
+
+/* the greeting video: with your own song it waits for the song to start and lasts as long as the song */
+const songMeta=id=>new Promise(r=>{const u=id==='own'?MUSURL:String(id).startsWith('md:')?MED[id.slice(3)]:null;if(!u)return r(0);const a=new Audio();a.preload='metadata';const t=setTimeout(()=>r(0),4000);a.onloadedmetadata=()=>{clearTimeout(t);r(isFinite(a.duration)?a.duration-(id==='own'?(P.mus0||0):0):0);};a.onerror=()=>{clearTimeout(t);r(0);};a.src=u;});
+{const tl=timeline;let FIT=0;timeline=function(){const S=tl();if(!FIT||FIT<=S.T+1)return S;
+ const fin=S.pop(),ph=P.photos.filter(i=>IMG[i]);let t=S.T-fin.d,k=0;const room=FIT-fin.d;
+ while(ph.length&&t+3.6<=room-2){const id=ph[k%ph.length];S.push({k:'photo',d:3.6,id,i:k%ph.length,t});t+=3.6;k++;}
+ fin.t=t;fin.d=Math.max(5,FIT-t);S.push(fin);S.T=fin.t+fin.d;return S;};
+ makeVideo=async function(){if(BUSY)return;await fontsReady();const m=P.music,cu=m==='own'||String(m).startsWith('md:');FIT=0;if(cu){const d=await songMeta(m);if(d>0)FIT=Math.min(d,300);}
+  const kq=P.vq==='fhd'?1.5:1,W=FMT[P.fmt].v[0]*kq,H=FMT[P.fmt].v[1]*kq,cv=h('canvas',{width:W,height:H}),c=cv.getContext('2d'),S=timeline();FIT=0;
+  const mime=window.MediaRecorder&&cv.captureStream&&['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
+  if(!mime){toast(T('This browser cannot create video here. Use screen recording instead.'));return;}
+  stopMusic();ac();const st=cv.captureStream(30);if(AC){if(!RD){RD=AC.createMediaStreamDestination();(OUT||MG).connect(RD);}RD.stream.getAudioTracks().forEach(tr=>st.addTrack(tr));}
+  let mr;try{mr=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:6e6*kq*kq});}catch(e){toast(T('This browser cannot create video here. Use screen recording instead.'));return;}
+  const chunks=[];mr.ondataavailable=e=>e.data.size&&chunks.push(e.data);const done=new Promise(r=>mr.onstop=r);let stop=0;const pb=h('i',{});
+  sheet(h('h3',{},T('Creating your video…')),cv,h('div',{class:'prog'},pb),h('small',{},T('Keep this screen open until it finishes.')),h('button',{class:'ghost',onclick:()=>{stop=1;}},T('Cancel')));
+  BUSY=1;const draw=t=>{try{frame(c,W,H,t,S);}catch(e){}};draw(0);playTune(m);
+  if(cu&&musEl){musEl.loop=false;musEl.onended=null;const t1=performance.now(),o0=m==='own'?(P.mus0||0):0;
+   await new Promise(r=>{const k=setInterval(()=>{if((!musEl.paused&&musEl.currentTime>o0+.01&&musEl.readyState>=3)||performance.now()-t1>4000){clearInterval(k);r();}},20);});}
+  REC.mr=mr;REC.shift=0;REC.paused=0;mr.start();const t0=performance.now();let faded=0;
+  await new Promise(res=>{const loop=()=>{if(REC.paused){raf(loop);return;}const t=(performance.now()-t0-REC.shift)/1000;draw(Math.min(t,S.T-.02));pb.style.width=Math.min(100,t/S.T*100)+'%';
+   if(!faded&&t>S.T-1.2&&AC){faded=1;MG.gain.setTargetAtTime(0,AC.currentTime,.3);}if(t>=S.T||stop)return res();raf(loop);};loop();});
+  REC.mr=null;mr.stop();await done;stopMusic();if(AC){MG.gain.cancelScheduledValues(AC.currentTime);MG.gain.setValueAtTime(.8,AC.currentTime+.05);}BUSY=0;
+  if(stop){closeSheet();return;}result(new Blob(chunks,{type:mime.split(';')[0]}),mime.includes('mp4')?'mp4':'webm');};}
+
+/* recordings never freeze: if the browser stops animation frames, a timer keeps drawing; if the app goes to the background, recording pauses and resumes cleanly */
+let LPUMP=0;{const pu=pump;pump=function(){LPUMP=performance.now();pu();};}
+const REC={paused:0,at:0,shift:0,mr:null,els:[]};const recOn=()=>!!(BUSY&&REC.mr)||!!(Show.film&&Show.film.mr);
+setInterval(()=>{if(recOn()&&!REC.paused&&performance.now()-LPUMP>70)pump();},33);
+document.addEventListener('visibilitychange',()=>{if(!recOn())return;const mr=REC.mr||(Show.film&&Show.film.mr);
+ if(document.visibilityState==='hidden'&&!REC.paused){REC.paused=1;REC.at=performance.now();try{mr.pause();}catch(e){}REC.els=[musEl,Show.va,Show.cur&&Show.cur.el].filter(e=>e&&e.pause&&!e.paused);REC.els.forEach(e=>e.pause());try{AC&&AC.suspend();}catch(e){}}
+ else if(document.visibilityState==='visible'&&REC.paused){REC.shift+=performance.now()-REC.at;REC.paused=0;try{AC&&AC.resume();}catch(e){}REC.els.forEach(e=>e.play().catch(()=>{}));REC.els=[];Show.last=performance.now();try{mr.resume();}catch(e){}}});
+/* a film has no host: hide the "Coming up" label on the waiting screen */
+{const w=waiting;waiting=function(c,W,H,t,T_){if(!Show.film)return w(c,W,H,t,T_);const n=Show.next;Show.next=Show.parts.length;try{w(c,W,H,t,T_);}finally{Show.next=n;}};}
+
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
  for(const id of [...P.photos,P.face,P.face2].filter(Boolean)){const b=await dget('ph:'+id);if(b){try{IMG[id]=await loadImg(b);URLS[id]=IMG[id].src;}catch(e){}}}
