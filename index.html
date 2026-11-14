@@ -4612,7 +4612,7 @@ const shHex=x=>{x=String(x||'');if(/^#[0-9a-f]{3}$/i.test(x))x='#'+x[1]+x[1]+x[2
 const shNum=v=>/^[\d.,\s٠-٩٫٬]+$/.test(v);
 const shPrice=v=>{v=String(v||'').trim();if(!v)return'';const r=shNum(v)&&brS('cur')?v+' '+brS('cur'):v;return /[؀-ۿ]/.test(r)?r:ltr(r);};
 const shOff=()=>{const o=String(P.off||'').trim();if(o)return ltr(o);const n=x=>parseFloat(String(x||'').replace(/[^\d.]/g,'')),a=n(P.old),b=n(P.price);return a>b&&b>0?ltr('-'+Math.round((1-b/a)*100)+'%'):'';};
-const shCta=()=>String(P.cta||'').trim()||L2(P.occ==='ordernow'?['Message us','راسلونا']:P.occ==='thankc'?['Order again','اطلب مجدداً']:['Order now','اطلب الآن']);
+const shCta=()=>P.nocta?'':String(P.cta||'').trim()||L2(P.occ==='ordernow'?['Message us','راسلونا']:P.occ==='thankc'?['Order again','اطلب مجدداً']:['Order now','اطلب الآن']);
 const shUntil=()=>{const u=String(P.until||'').trim();return u?L2(['Offer ends ','العرض حتى '])+u:'';};
 const shKind=()=>BR.type==='gift'?'gift':BR.type==='cake'?'cake':(OCCIC[P.occ]||'spark');
 function shIc(c,k,x,y,size,col,lw){const p=P2D[k]||(P2D[k]=new Path2D(ICONS[k]||ICONS.spark));c.save();c.translate(x-size/2,y-size/2);c.scale(size/24,size/24);c.strokeStyle=col;c.lineWidth=lw||1.5;c.lineCap='round';c.lineJoin='round';c.stroke(p);c.restore();}
@@ -4749,7 +4749,7 @@ SC.deal=function(c,W,H,lt,sc,T_){const s=U(W,H),A=T_.shc?m2acc(T_):m2dark(T_),on
 SC.brand=function(c,W,H,lt,sc,T_){const s=U(W,H),lite=!!T_.shc,D=m2dark(T_),cx=W/2,BG=lite?'#fffdf8':D,IK=lite?'#1d1530':'#ffffff',AC=lite?m2acc(T_):m2pal(T_)[0],r=s*16,ly=H*.3,f=FONT[T_.f]||FONT.clean,d=RTL?-1:1;
  c.fillStyle=BG;c.fillRect(-W*.2,-H*.2,W*1.4,H*1.4);c.fillStyle=hexA(shHex(AC),.14);c.beginPath();c.arc(W*.9,H*.08,s*26*M2.eo(lt/.8),0,7);c.fill();c.beginPath();c.arc(W*.08,H*.93,s*20*M2.eo((lt-.2)/.8),0,7);c.fill();
  m2ring(c,cx,ly,r*1.28,-1.57,-1.57+6.283*M2.eio(lt/1.1),hexA(shHex(AC),.9),s*.55);const k=back(lt/.6);if(k>0){c.save();c.translate(cx,ly);c.scale(k,k);if(BRIMG){c.shadowColor='rgba(0,0,0,.28)';c.shadowBlur=s*4;brLogo(c,0,0,r);}else{c.fillStyle=AC;c.beginPath();c.arc(0,0,r,0,7);c.fill();shIc(c,'store',0,0,r*1.1,shOn(AC),1.4);}c.restore();}if(!isShop())text(c,L2(['Prepared with love by','أُعدّت بحب من']),cx,ly-r*1.28-s*7,{size:s*4,color:IK,w:700,a:ease((lt-.3)/.5)*.85,max:W*.8,sh:0,fx:0});
- let y=ly+r*1.28+s*11;const nm=brS('name')||names();m2rev(c,nm,cx,y,{size:s*10.5,fam:f,color:IK,max:W*.84},lt-.45);y+=s*9;if(brS('tag')){m2rev(c,brS('tag'),cx,y,{size:s*4.4,color:IK,w:600,max:W*.8,a:.85},lt-.75);y+=s*7;}
+ let y=ly+r*1.28+s*11;const [n1,n2]=brNm(),f1=brF(n1,f);m2rev(c,n1,cx,y,Object.assign({size:s*10.5,fam:f1,color:IK,max:W*.84},f1===FONT.clean?{w:800}:{}),lt-.45);y+=s*9;if(n2){y+=s*1.6;m2rev(c,n2,cx,y,{size:s*5.6,fam:FONT.clean,color:IK,w:700,max:W*.8,a:.9},lt-.6);y+=s*8;}if(brS('tag')){m2rev(c,brS('tag'),cx,y,{size:s*4.4,color:IK,w:600,max:W*.8,a:.85},lt-.75);y+=s*7;}
  const u=M2.eo((lt-.9)/.5);c.fillStyle=AC;c.fillRect(cx-s*9*u,y,s*18*u,s*.5);y+=s*8;
  [['phone',brS('phone')&&ltr(brS('phone'))],['chat',brS('handle')&&ltr(brS('handle'))],['pin',brS('addr')]].filter(q=>q[1]).forEach(([ik,tx],i)=>{const a=ease((lt-1.1-i*.2)/.4);if(a<=0){y+=s*9.5;return;}const z=s*5;setF(c,z,FONT.clean,700);const tw=Math.min(W*.7,c.measureText(tx).width),yy=y+(1-a)*s*4;c.save();c.globalAlpha=a;shIc(c,ik,cx-d*(tw/2+z*.95),yy,z*1.25,AC,1.9);c.restore();text(c,tx,cx+d*z*.55,yy,{size:z,fam:FONT.clean,color:IK,w:700,a,max:W*.7,sh:0,fx:0});y+=s*9.5;});
  const kb=back((lt-1.9)/.5);if(kb>0){const p=kb*(1+.025*Math.sin(lt*5));c.save();c.translate(cx,Math.max(y+s*6,H*.8));c.scale(p,p);shBtn(c,0,0,s*4.6,shCta(),AC,shOn(AC),W*.8);c.restore();}};
@@ -4916,6 +4916,49 @@ async function brandImport(f){let o=f;if(f instanceof Blob){o=null;if(f.size<8e6
 {const i0=importProject;importProject=async function(f){try{if(f.size<8e6){const o=JSON.parse(await f.text());if(o&&o.app==='zahwa'&&o.shop&&!o.project)return brandImport(o);}}catch(e){}return i0(f);};}
 Object.assign(AR,{'Move to another device':'النقل إلى جهاز آخر','Save your shop as a file, then open it in Zahwa on another phone or tablet.':'احفظ متجرك كملف، ثم افتحه في زهوة على هاتف أو جهاز لوحي آخر.','Save shop file':'حفظ ملف المتجر','Open shop file':'فتح ملف المتجر','Add your shop details first':'أضف بيانات متجرك أولاً','This file is not a shop file.':'هذا الملف ليس ملف متجر.','Your shop was added':'تمت إضافة متجرك',
 'Replace the shop on this device?':'هل تريد استبدال المتجر على هذا الجهاز؟','On this device':'على هذا الجهاز','In the file':'في الملف','Replace':'استبدال','Cancel':'إلغاء'});
+
+/* ---------- settings that follow the design: only what the current design uses is offered ---------- */
+/* a shop name written in two scripts ("Güzel Touch | لمسة جميلة") becomes two lines, the one in the design's language first */
+function brNm(){const nm=brS('name')||names(),ar=s=>/[؀-ۿ]/.test(s),p=nm.split(/\s*[|·•\/–—]\s*|\s+-\s+/).map(x=>x.trim()).filter(Boolean);
+ if(p.length===2&&ar(p[0])!==ar(p[1])){const a=ar(p[0])?p[0]:p[1],l=ar(p[0])?p[1]:p[0];return P.lang==='ar'?[a,l]:[l,a];}return[nm,''];}
+function brF(s,f){const a=/[؀-ۿ]/.test(s),l=/[A-Za-z]/.test(s);return(a&&l)||(P.lang==='ar'?!a:a)?FONT.clean:f;}
+const sLay=()=>String(P.layout||'').startsWith('s_');
+
+/* does this design draw the cartoon character? measured on a tiny render, not guessed */
+let AVN=0,AVC={k:'',v:false};
+{const s0=star;star=function(){AVN++;return s0.apply(this,arguments);};}
+function usesAv(){if(sLay()||isShop())return false;const k=[P.occ,P.layout,P.art,P.theme,P.world,P.avatar,P.stage,P.mode,P.photos.length,P.face?1:0,P.vst,P.open].join('|');if(AVC.k===k)return AVC.v;let v=false;const kr=RTL,kw=WMK;
+ try{const cv=document.createElement('canvas');cv.width=90;cv.height=120;const c=cv.getContext('2d');WMK=0;RTL=P.lang==='ar';AVN=0;poster(c,90,120,2.4);if(P.mode==='video'&&!AVN){const S=timeline();for(let i=1;i<8&&!AVN;i++)frame(c,90,120,S.T*i/8,S);}v=AVN>0;}catch(e){v=true;}
+ RTL=kr;WMK=kw;AVC={k,v};return v;}
+
+/* the layouts that fit the current design */
+function czLayouts(){const nm=k=>L2(LNAME[k]||[k,k]);if(isShop()){const u=[];(SHT[P.occ]||[]).forEach(d=>{if(!u.includes(d[2]))u.push(d[2]);});return u.map(k=>[k,nm(k)]);}
+ const L=[['classic',T('Classic')],['scene',T('Scene with avatar')],['card',T('Card')],['badge',T('Medallion')],['type',T('Big name')],['collage',T('Photo collage')],['full',T('Full photo')],...Object.keys(LNAME).map(k=>[k,nm(k)])];
+ if(sLay()||P.photos.length){const u=[];CLT.forEach(d=>{if(!u.includes(d[2]))u.push(d[2]);});u.forEach(k=>L.push([k,nm(k)]));}return L;}
+function czPanel(){const A=ARTS[P.art],s=sLay(),ar=P.lang==='ar',key=ar?'fontAr':'fontEn',list=ar?FAR:FEN,LL=czLayouts(),lb=t=>h('div',{class:'lbl'},t),chips=(L,cur,set)=>h('div',{class:'row scroll'},L.map(([v,l])=>h('button',{class:'chip'+(cur===v?' on':''),onclick:()=>{set(v);ch();}},l)));
+ return[h('div',{class:'czh'},T('Customise this design')),
+  lb(T('Background')),chips([!s&&['',T('None (use a scene)')],...Object.keys(ARTS).map(k=>[k,L2(ARTS[k].n)])].filter(Boolean),P.art||'',v=>{P.art=v;P.pal=0;}),
+  A&&A.pals.length>1&&[lb(T('Colours')),h('div',{class:'seg'},A.pals.map((p,i)=>h('button',{class:(P.pal||0)%A.pals.length===i?'on':'','aria-label':T('Colours')+' '+(i+1),onclick:()=>{P.pal=i;ch();}},h('span',{class:'dot',style:`background:linear-gradient(135deg,${p.g[1]} 50%,${p.acc} 50%)`}))))],
+  LL.length>1&&[lb(T('Layout')),chips(LL,P.layout,v=>{P.layout=v;})],
+  lb(T('Font')),h('div',{class:'row scroll'},h('button',{class:'fchip'+(!P[key]?' on':''),onclick:()=>{P[key]='';ch();}},T('Automatic')),list.map(n=>h('button',{class:'fchip'+(P[key]===n?' on':''),style:`font-family:'${n}',var(--body)`,onclick:()=>{P[key]=n;ch();}},ar?'مبروك':'Hello',h('small',{},n)))),
+  isShop()&&h('label',{class:'chk'},h('input',{type:'checkbox',checked:!P.nocta,onchange:e=>{P.nocta=!e.target.checked;ch();}}),h('span',{},T('Show the order button'))),
+  !s&&!isShop()&&[lb(T('Cartoon character')),seg('avatar',[['',T('Automatic')],['on',T('Show')],['off',T('Hide')]])],
+  !isShop()&&P.mode==='video'&&[lb(T('Video opening')),seg('open',[['',T('Automatic')],['envelope',T('Envelope')],['gift',T('Gift box')],['curtain',T('Curtain')],['none',T('None')]])]];}
+{const o9=openTool;openTool=function(id){o9(id);if(id!=='design')return;const card=$('sheet').querySelector('.card');if(!card)return;const all=[...card.querySelectorAll('button.btn')].find(b=>b.textContent.includes(T('All design settings'))),box=h('div',{class:'cz'},czPanel());
+ if(!all){card.append(box);return;}all.before(box);if(sLay()||isShop())all.remove();else all.textContent='⚙️ '+T(usesAv()?'Character look, scenes and more':'Scenes, themes and more');};}
+
+/* the photo tool: the face slot only where a face is used */
+{const p9=PANEL.photos;PANEL.photos=()=>{const a=p9();if(!sLay()&&!isShop()){if(!usesAv()){const l=a.flat(5).find(n=>n&&n.className==='lbl'&&n.textContent===T('Avatar face'));if(l)l.textContent=T('Face for the photo ring');}return a;}
+ const out=a.flat(5).filter(n=>n&&!(n.className==='lbl'||n.className==='face'||(n.tagName==='DETAILS'&&n.classList.contains('sec'))));out.forEach(n=>{if(n.querySelectorAll)n.querySelectorAll('.tf').forEach(b=>b.remove());});return out;};}
+
+/* the full settings page: no scene picker over an art background, no character controls without a character */
+{const labOf=n=>{if(!n||!n.querySelector)return'';const q=n.tagName==='LABEL'?n.querySelector('span'):n.tagName==='DETAILS'?n.querySelector('summary'):null;return q?q.textContent.replace(/^[^\p{L}]+/u,'').trim():'';};
+ const s9=PANEL.style;PANEL.style=()=>{const a=s9().flat(5).filter(Boolean),s=sLay()||isShop(),drop=new Set();if(P.art||s)drop.add(T('Scene'));if(s||!(usesAv()||P.mode==='party'))drop.add(T('Avatar (the star of the party show)'));
+  if(s)[T('Cartoon character'),T('Layout'),T('Layout and photo frame'),T('More layouts'),T('Signature touches')].forEach(x=>drop.add(x));
+  const out=a.filter(n=>!drop.has(labOf(n)));if(P.art||s){const i=out.findIndex(n=>n.className==='ths');if(i>=0){const g=out.splice(i,1)[0];if(!s)out.push(sec('ths',T('Scene themes (replace the art background)'),0,g));}}
+  if(s){const LL=czLayouts();if(LL.length>1)out.push(fld(T('Layout'),h('div',{class:'row',style:'justify-content:flex-start'},LL.map(([v,l])=>h('button',{class:'chip'+(P.layout===v?' on':''),onclick:()=>{P.layout=v;ch();}},l)))));}return out;};}
+document.head.append(h('style',{},'.cz{display:flex;flex-direction:column;gap:8px;margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}.czh{font-weight:800;font-size:15px}.cz .lbl{margin:4px 0 0}'));
+Object.assign(AR,{'Customise this design':'خصّص هذا التصميم','Background':'الخلفية','Font':'الخط','Show the order button':'إظهار زر الطلب','Scenes, themes and more':'المشاهد والألوان والمزيد','Character look, scenes and more':'شكل الشخصية والمشاهد والمزيد','Scene themes (replace the art background)':'ألوان المشاهد (تستبدل الخلفية الفنية)','Face for the photo ring':'صورة الوجه للإطار الدائري'});
 
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
