@@ -5265,6 +5265,47 @@ function finDeco(c,W,H,t){const k=P.deco;if(!k)return;const m=Math.min(W,H),n=k=
    lb(T('Sprinkles')),chips('deco',[['',T('None')],['confetti',T('Confetti')],['sparkle',T('Sparkle')],['stars',T('Stars')],['hearts',T('Hearts')],['snow',T('Snow')]])];};}
 Object.assign(AR,{'Border':'الإطار','Thin line':'خط رفيع','Double line':'خط مزدوج','Rounded':'دائري الزوايا','Corners':'زوايا','Dotted':'منقّط','Border colour':'لون الإطار','White':'أبيض','Gold':'ذهبي','Dark':'داكن','Design colour':'لون التصميم','Sprinkles':'لمسات متناثرة','Confetti':'قصاصات ملوّنة','Sparkle':'بريق','Stars':'نجوم','Hearts':'قلوب','Snow':'ثلج'});
 
+/* ---------- from one partner to the other: anniversary, birthday, love, engagement and wedding can be addressed to my wife / husband / fiancée / fiancé ---------- */
+const RELO={anniversary:['wife','husband'],birthday:['wife','husband','fiancee','fiance'],love:['wife','husband','fiancee','fiance'],engagement:['fiancee','fiance'],wedding:['wife','husband']},
+ RELN={wife:['My wife','زوجتي'],husband:['My husband','زوجي'],fiancee:['My fiancée','خطيبتي'],fiance:['My fiancé','خطيبي']},RELNW={wife:['My bride','عروسي'],husband:['My groom','عريسي']};
+const relOn=()=>!!(P.rel&&(RELO[P.occ]||[]).includes(P.rel)),relK=()=>P.rel==='wife'||P.rel==='husband'?'sp':'fi';
+const RELH={anniversary:{sp:['Happy Anniversary, My Love','ذكرى زواج سعيدة يا [حبيبي|حبيبتي]']},
+ birthday:{sp:['Happy Birthday, My Love','عيد ميلاد سعيد يا [حبيبي|حبيبتي]'],fi:['Happy Birthday, My Love','عيد ميلاد سعيد يا [حبيبي|حبيبتي]']},
+ love:{sp:['To My [Husband|Wife]','إلى [زوجي الغالي|زوجتي الغالية]'],fi:['To My [Fiancé|Fiancée]','إلى [خطيبي|خطيبتي]']},
+ engagement:{fi:['To My [Fiancé|Fiancée]','إلى [خطيبي|خطيبتي]']},wedding:{sp:['To My [Groom|Bride]','إلى [عريسي|عروسي]']}};
+const RELW={anniversary:{sp:[
+  ["Happy Anniversary, my love. Every year with you is my favourite chapter ❤️","{years} years by your side, and I would choose you all over again 💞","To my [husband|wife], my best friend and my home. Thank you for every day 🌹","You are still the best decision I ever made. Happy Anniversary, {name} 💍","Thank you for every laugh, every hard day we got through, and every dream we share ✨"],
+  ["ذكرى زواج سعيدة يا [حبيبي|حبيبتي]، كل سنة معك أجمل من التي قبلها ❤️","{years} سنة إلى جانبك، ولو عاد بي الزمن لاخترتك من جديد 💞","إلى [زوجي الغالي|زوجتي الغالية]، [رفيق|رفيقة] عمري وسكن قلبي، شكراً على كل يوم 🌹","[ما زلتَ|ما زلتِ] أجمل قرار اتخذته في حياتي. كل عام ونحن معاً يا {name} 💍","شكراً على كل ضحكة، وكل يوم صعب تجاوزناه معاً، وكل حلم نتقاسمه ✨"]]},
+ birthday:{sp:[
+  ["Happy Birthday to my [husband|wife], my love and my best friend ❤️","Another year of you is the best gift I could ask for. Happy Birthday, {name} 🎂","You make every ordinary day feel special. Today is all about you, my love 🌹","{age} looks wonderful on you. I love you more every year 💞"],
+  ["عيد ميلاد سعيد يا [زوجي الغالي|زوجتي الغالية]، يا [حبيب|حبيبة] قلبي و[رفيق|رفيقة] عمري ❤️","وجودك في حياتي أجمل هدية. كل عام وأنت بخير يا {name} 🎂","كل عام وأنت [حبيبي|حبيبتي]، وكل عام وأنا أسعد الناس بك 🌹","{age} سنة وأنت تزداد[|ين] جمالاً في عيني. أحبك أكثر كل عام 💞"]],
+  fi:[["Happy Birthday to my [fiancé|fiancée]. I can't wait to spend every birthday with you 💍","Happy Birthday, {name}. The best is still ahead of us ❤️","You are the best thing that ever happened to me. Happy Birthday, my love 🌹"],
+  ["عيد ميلاد سعيد يا [خطيبي|خطيبتي]، وعقبال كل أعيادك ونحن معاً 💍","كل عام وأنت بخير يا {name}، والقادم أجمل بإذن الله ونحن معاً ❤️","أنت أجمل ما حدث في حياتي. كل عام وأنت [حبيبي|حبيبتي] 🌹"]]},
+ love:{sp:[["To my [husband|wife]: you are my today and all of my tomorrows ❤️","Thank you for being my partner, my friend and my home, {name} 🌹","I love you more with every day we share 💞"],
+  ["إلى [زوجي|زوجتي]: [أنتَ|أنتِ] يومي وكل أيامي القادمة ❤️","شكراً لأنك [شريك|شريكة] عمري وسكن قلبي يا {name} 🌹","أحبك أكثر مع كل يوم نعيشه معاً 💞"]],
+  fi:[["To my [fiancé|fiancée]: I can't wait to start our life together 💍","Every day brings me closer to forever with you, {name} ❤️","With you, the future looks beautiful 🌹"],
+  ["إلى [خطيبي|خطيبتي]: أنتظر بشوق أن نبدأ حياتنا معاً 💍","كل يوم يقرّبني من عمر كامل معك يا {name} ❤️","معك أرى المستقبل أجمل 🌹"]]},
+ engagement:{fi:[["The best yes of my life. I can't wait to marry you, {name} 💍","Today we begin our forever. I love you ❤️","To my [fiancé|fiancée]: thank you for choosing me ✨"],
+  ["أجمل «نعم» في حياتي. أنتظر يوم زفافنا بشوق يا {name} 💍","اليوم تبدأ حكايتنا، أحبك ❤️","إلى [خطيبي|خطيبتي]: شكراً لأنك [اخترتني|اخترتِني] ✨"]]},
+ wedding:{sp:[["Today I marry my best friend. I love you, {name} 💍","To my [groom|bride]: here's to forever, starting today ❤️","With you, I am home ✨"],
+  ["اليوم أتزوج [رفيق|رفيقة] عمري. أحبك يا {name} 💍","إلى [عريسي|عروسي]: اليوم تبدأ أجمل أيام العمر ❤️","معك وجدت سكني وطمأنينتي ✨"]]}};
+{const g9=gender;gender=function(){return relOn()?(P.rel==='wife'||P.rel==='fiancee'?'f':'m'):g9();};}
+{const n9=names;names=function(){return relOn()?(P.name||'').trim():n9();};}
+{const f9=fill;fill=function(s){if(relOn()){const H=(RELH[P.occ]||{})[relK()];if(H&&s===L2(occ().h))s=L2(H);}return f9(s);};}
+{const w9=wishes;wishes=function(){const W=relOn()&&(RELW[P.occ]||{})[relK()];if(!W)return w9();return L2(W).filter(s=>(!/\{age\}/.test(s)||P.age)&&(!/\{years\}/.test(s)||P.years)).map(fill);};}
+function relSet(v){P.rel=v;P.msg='';if(v){P.g=v==='wife'||v==='fiancee'?'f':'m';if(P.occ==='birthday')P.stage='adult';if(SFROM.includes((P.from||'').trim()))P.from='';}ch();}
+function relRow(){const L=RELO[P.occ];if(!L)return null;const nm=k=>L2(P.occ==='wedding'?RELNW[k]:RELN[k]),couple=occ().f.split(' ').includes('name2');
+ return[h('div',{class:'lbl'},T('Who is it for?')),h('div',{class:'row scroll'},[['',T(couple?'A couple':'Someone I know')],...L.map(k=>[k,nm(k)])].map(([v,l])=>h('button',{class:'chip'+((relOn()?P.rel:'')===v?' on':''),onclick:()=>relSet(v)},l))),
+  relOn()&&h('div',{class:'hint',style:'font-size:12px;opacity:.75;margin:-2px 0 4px'},T('Written from you to your partner: write their name only.'))];}
+{const d9=PANEL.details;PANEL.details=()=>{const a=d9();if(isShop()||!RELO[P.occ])return a;let out=[a].flat(6).filter(Boolean);
+  if(relOn())out=out.filter(n=>{const el=n.querySelector&&n.querySelector('#f_name2');if(!el)return true;const w=el.closest('.fld')||el.parentElement;if(w===n||!w)return false;w.remove();return true;});
+  return[relRow(),...out];};}
+/* ready designs: some of them are already written partner to partner, and the rest start with no choice made */
+{const t9=tpls;tpls=function(id){const L=t9(id).map(d=>Object.assign({rel:''},d)),O=RELO[id];if(!O)return L;const k=P.lang==='ar'?1:0,s=SAMP[id]||{},nm=f=>f?(s.name2?s.name2[k]:['Mona','منى'][k]):(s.name?s.name[k]:['Ali','علي'][k]);let q=0;
+  L.forEach((d,i)=>{if(id==='birthday'){if(d.stage!=='adult'||(q++)%2)return;const f=d.g==='f';d.rel=f?'wife':'husband';d.from='';return;}
+   if(i%(id==='wedding'||id==='engagement'?5:3)!==1)return;d.from='';const f=(q++)%2===0,sp=O.includes('wife');d.rel=sp?(f?'wife':'husband'):(f?'fiancee':'fiance');d.g=f?'f':'m';d.name=id==='love'&&d.name?d.name:nm(f);d.name2='';});return L;};}
+Object.assign(AR,{'Who is it for?':'لمن هذه التهنئة؟','A couple':'لزوجين','Someone I know':'لشخص عزيز','Written from you to your partner: write their name only.':'مكتوبة منك إلى شريك حياتك: اكتب اسمه فقط.'});
+
 /* ---------- choosing an option keeps the list where it was: the panel, its sideways rows and the page do not jump back to the start ---------- */
 let KSD=0;
 function keepScroll(fn){if(KSD)return fn();const s=$('sheet'),card=s&&s.querySelector('.card'),key=()=>[VIEW,typeof TAB==='undefined'?'':TAB,TOOL||'',s&&!s.hidden?(s.dataset.tool||'sheet'):''].join('|'),k0=key(),top=card?card.scrollTop:0,y=window.scrollY,rows=[...document.querySelectorAll('.row.scroll,.hs')].map(r=>r.scrollLeft);
