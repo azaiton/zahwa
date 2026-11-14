@@ -2385,6 +2385,10 @@ Object.assign(AR,{'Choose the video messages':'اختر رسائل الفيدي�
 /* each video message is released completely once it has played, so a long export never runs out of memory */
 function vxBoost(el){try{if(!ac()||el._b)return;el._b=1;const s=AC.createMediaElementSource(el),g=AC.createGain(),k=AC.createDynamicsCompressor();g.gain.value=2.5;s.connect(g);g.connect(k);k.connect(MG);el._nodes=[s,g,k];}catch(e){}}
 function vxFree(el){try{el.pause();el.onended=null;(el._nodes||[]).forEach(n=>{try{n.disconnect();}catch(e){}});el._nodes=null;el.removeAttribute('src');el.load();}catch(e){}if(el._id&&VXPOOL[el._id]===el)delete VXPOOL[el._id];}
+/* a finished video that was not saved is dropped from memory as soon as its sheet closes */
+let RESEL=null;const resFree=()=>{if(RESEL&&!RESEL.isConnected){try{RESEL.pause&&RESEL.pause();}catch(e){}const u=RESEL.src;RESEL.removeAttribute('src');try{RESEL.load&&RESEL.load();}catch(e){}if(u&&u.startsWith('blob:'))URL.revokeObjectURL(u);RESEL=null;}};
+{const r0=result;result=function(b,ext){r0(b,ext);RESEL=$('sheet').querySelector('video,img');};}
+{const cs=closeSheet;closeSheet=function(){cs();resFree();};const sh=sheet;sheet=function(...a){const x=sh(...a);resFree();return x;};}
 
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
