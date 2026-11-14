@@ -5306,6 +5306,17 @@ function relRow(){const L=RELO[P.occ];if(!L)return null;const nm=k=>L2(P.occ==='
    if(i%(id==='wedding'||id==='engagement'?5:3)!==1)return;d.from='';const f=(q++)%2===0,sp=O.includes('wife');d.rel=sp?(f?'wife':'husband'):(f?'fiancee':'fiance');d.g=f?'f':'m';d.name=id==='love'&&d.name?d.name:nm(f);d.name2='';});return L;};}
 Object.assign(AR,{'Who is it for?':'لمن هذه التهنئة؟','A couple':'لزوجين','Someone I know':'لشخص عزيز','Written from you to your partner: write their name only.':'مكتوبة منك إلى شريك حياتك: اكتب اسمه فقط.'});
 
+/* ---------- tablets and wide screens: a tool's settings open as a panel beside the design, never on top of it ---------- */
+document.head.append(h('style',{},`@media(min-width:900px){
+body #sheet.tool{align-items:stretch;justify-content:flex-end;padding:72px 14px calc(104px + env(safe-area-inset-bottom,0px))}
+body #sheet.tool .card{width:min(430px,42vw);max-width:none;max-height:none;border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.5);animation:none}
+body.tooled #app{padding-inline-end:calc(min(430px,42vw) + 22px)}
+body.tooled .stc #cv{max-height:62vh}
+body.tooled .tools{grid-template-columns:repeat(auto-fit,minmax(76px,1fr))}
+}`));
+{const t9=toolSheet;toolSheet=function(){const r=t9.apply(this,arguments);document.body.classList.add('tooled');return r;};}
+{const c9=closeSheet;closeSheet=function(){document.body.classList.remove('tooled');return c9.apply(this,arguments);};}
+
 /* ---------- choosing an option keeps the list where it was: the panel, its sideways rows and the page do not jump back to the start ---------- */
 let KSD=0;
 function keepScroll(fn){if(KSD)return fn();const s=$('sheet'),card=s&&s.querySelector('.card'),key=()=>[VIEW,typeof TAB==='undefined'?'':TAB,TOOL||'',s&&!s.hidden?(s.dataset.tool||'sheet'):''].join('|'),k0=key(),top=card?card.scrollTop:0,y=window.scrollY,rows=[...document.querySelectorAll('.row.scroll,.hs')].map(r=>r.scrollLeft);
