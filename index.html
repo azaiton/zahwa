@@ -4612,7 +4612,7 @@ const shHex=x=>{x=String(x||'');if(/^#[0-9a-f]{3}$/i.test(x))x='#'+x[1]+x[1]+x[2
 const shNum=v=>/^[\d.,\s٠-٩٫٬]+$/.test(v);
 const shPrice=v=>{v=String(v||'').trim();if(!v)return'';const r=shNum(v)&&brS('cur')?v+' '+brS('cur'):v;return /[؀-ۿ]/.test(r)?r:ltr(r);};
 const shOff=()=>{const o=String(P.off||'').trim();if(o)return ltr(o);const n=x=>parseFloat(String(x||'').replace(/[^\d.]/g,'')),a=n(P.old),b=n(P.price);return a>b&&b>0?ltr('-'+Math.round((1-b/a)*100)+'%'):'';};
-const shCta=()=>P.nocta?'':String(P.cta||'').trim()||L2(P.occ==='ordernow'?['Message us','راسلونا']:P.occ==='thankc'?['Order again','اطلب مجدداً']:['Order now','اطلب الآن']);
+const shCta=()=>P.nocta?'':String(P.cta||'').trim()||L2(P.occ==='ordernow'?['Message us','راسلونا']:P.occ==='thankc'?['Order again','اطلب مجدداً']:P.occ==='order'?['Order yours','اطلب مثله']:['Order now','اطلب الآن']);
 const shUntil=()=>{const u=String(P.until||'').trim();return u?L2(['Offer ends ','العرض حتى '])+u:'';};
 const shKind=()=>BR.type==='gift'?'gift':BR.type==='cake'?'cake':(OCCIC[P.occ]||'spark');
 function shIc(c,k,x,y,size,col,lw){const p=P2D[k]||(P2D[k]=new Path2D(ICONS[k]||ICONS.spark));c.save();c.translate(x-size/2,y-size/2);c.scale(size/24,size/24);c.strokeStyle=col;c.lineWidth=lw||1.5;c.lineCap='round';c.lineJoin='round';c.stroke(p);c.restore();}
@@ -4959,6 +4959,15 @@ function czPanel(){const A=ARTS[P.art],s=sLay(),ar=P.lang==='ar',key=ar?'fontAr'
   if(s){const LL=czLayouts();if(LL.length>1)out.push(fld(T('Layout'),h('div',{class:'row',style:'justify-content:flex-start'},LL.map(([v,l])=>h('button',{class:'chip'+(P.layout===v?' on':''),onclick:()=>{P.layout=v;ch();}},l)))));}return out;};}
 document.head.append(h('style',{},'.cz{display:flex;flex-direction:column;gap:8px;margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}.czh{font-weight:800;font-size:15px}.cz .lbl{margin:4px 0 0}'));
 Object.assign(AR,{'Customise this design':'خصّص هذا التصميم','Background':'الخلفية','Font':'الخط','Show the order button':'إظهار زر الطلب','Scenes, themes and more':'المشاهد والألوان والمزيد','Character look, scenes and more':'شكل الشخصية والمشاهد والمزيد','Scene themes (replace the art background)':'ألوان المشاهد (تستبدل الخلفية الفنية)','Face for the photo ring':'صورة الوجه للإطار الدائري'});
+
+/* ---------- a client's order as a marketing post: the photo of what was made, the page's name and contact, and a way to order the same ---------- */
+OCC.push({id:'order',e:'🎀',n:["A client's order",'من طلبات زبائننا'],f:'item price',th:['ivory','rose','gala','mint','sunset','mono'],mu:'chill',h:['From our orders','من طلبات زبائننا'],w:[["Made for a special occasion. Want one like it? 🎁","Prepared with love for one of our clients ✨","Another happy order on its way 💝","Every order is made just for you. Message us to plan yours 🌸"],["حضّرناه لمناسبة مميزة. تريد مثله؟ 🎁","حضّرناه بحب لأحد زبائننا ✨","طلب جديد في طريقه لإسعاد أصحابه 💝","كل طلب نحضّره خصيصاً لكم. راسلونا لتجهيز طلبكم 🌸"]]});
+SHOP.splice(Math.max(0,SHOP.indexOf('thankc')),0,'order');OCCIC.order='gift';OCCOL.order='#b46cff';
+SHT.order=[['silk',0,'s_frame','elegant'],['marble',0,'s_hero','elegant'],['bokeh',0,'s_side','modern'],['watercolor',0,'s_tag',''],['petals',0,'s_hero','elegant'],['boho',0,'s_frame','modern'],['mesh',1,'s_side','modern'],['breeze',0,'s_tag','elegant'],['aurora',0,'s_hero','modern']];
+const ORDN={cake:['Birthday cake, made to order','كيكة عيد ميلاد حسب الطلب'],gift:['Birthday gift box','علبة هدايا عيد ميلاد'],other:['Custom order','طلب خاص']};
+{const tp=tpls;tpls=function(id){const L=tp(id);if(id==='order'){const k=P.lang==='ar'?1:0,n=(ORDN[BR.type]||ORDN.other)[k];L.forEach(d=>{d.name=n;d.price='';d.old='';d.off='';});}return L;};}
+{const d0=PANEL.details;PANEL.details=()=>{if(P.occ!=='order')return d0();return[inp('name',T('What was ordered')),inp('price',T('Price (optional)')),inp('cta',T('Button text'),{placeholder:shCta()}),brRow()];};}
+Object.assign(AR,{'What was ordered':'ما الذي تم طلبه','Price (optional)':'السعر (اختياري)'});
 
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
