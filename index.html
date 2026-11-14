@@ -2334,7 +2334,7 @@ makeVideo=async function(){if(BUSY)return;await fontsReady();const S=await vxPla
  if(!mime){toast(T('This browser cannot create video here. Use screen recording instead.'));return;}
  stopMusic();ac();const st=capStream(cv);if(AC){if(!RD){RD=AC.createMediaStreamDestination();(OUT||MG).connect(RD);}RD.stream.getAudioTracks().forEach(tr=>st.addTrack(tr));}
  let mr;try{mr=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:4e6*kq*kq});}catch(e){toast(T('This browser cannot create video here. Use screen recording instead.'));return;}
- const chunks=[];mr.ondataavailable=e=>e.data.size&&chunks.push(e.data);const done=new Promise(r=>mr.onstop=r);let stop=0;const pb=h('i',{}),lab=h('small',{},'0:00 / '+vxT(S.T));
+ const chunks=[];mr.ondataavailable=e=>e.data.size&&chunks.push(e.data);const done=new Promise(r=>mr.onstop=r);let stop=0;const pb=h('i',{}),lab=h('small',{dir:'ltr',style:'direction:ltr;unicode-bidi:isolate'},'0:00 / '+vxT(S.T));
  sheet(h('h3',{},T('Creating your video…')),cv,h('div',{class:'prog'},pb),lab,h('small',{},T('Keep this screen open until it finishes.')),h('button',{class:'ghost',onclick:()=>{stop=1;}},T('Cancel')));
  BUSY=1;let lastD=0;const draw=(t,force)=>{const n=performance.now();if(!force&&n-lastD<31)return;lastD=n;try{frame(c,W,H,t,S);}catch(e){}if(cv._rf)cv._rf();};draw(0,1);
  const loopSong=cu&&S.sd>0&&(vxo().len!=='song'||S.note==='long');
@@ -2389,6 +2389,18 @@ function vxFree(el){try{el.pause();el.onended=null;(el._nodes||[]).forEach(n=>{t
 let RESEL=null;const resFree=()=>{if(RESEL&&!RESEL.isConnected){try{RESEL.pause&&RESEL.pause();}catch(e){}const u=RESEL.src;RESEL.removeAttribute('src');try{RESEL.load&&RESEL.load();}catch(e){}if(u&&u.startsWith('blob:'))URL.revokeObjectURL(u);RESEL=null;}};
 {const r0=result;result=function(b,ext){r0(b,ext);RESEL=$('sheet').querySelector('video,img');};}
 {const cs=closeSheet;closeSheet=function(){cs();resFree();};const sh=sheet;sheet=function(...a){const x=sh(...a);resFree();return x;};}
+/* iPad Safari stops updating the picture of a video it thinks nobody can see: while recording, the playing message is shown as a small real thumbnail */
+const HOLDHID='position:fixed;left:0;top:0;width:120px;height:120px;opacity:.01;overflow:hidden;pointer-events:none;z-index:-1';
+function holdShow(){let host=null,css='';
+ if(BUSY&&REC.mr){const card=$('sheet').querySelector('.card');if(card&&card.querySelector('canvas')){host=card;css='position:relative;width:110px;height:110px;border-radius:14px;overflow:hidden;align-self:center;opacity:1;pointer-events:none;flex-shrink:0;background:#000';}}
+ else if(Show.film){host=$('stageWrap');css='position:absolute;right:10px;bottom:10px;width:96px;height:96px;border-radius:12px;overflow:hidden;opacity:1;pointer-events:none;z-index:5;background:#000';}
+ if(!host)return;if(MHOLD.parentNode!==host){const pg=host.querySelector('.prog');pg?host.insertBefore(MHOLD,pg):host.append(MHOLD);}MHOLD.style.cssText=css;[...MHOLD.children].forEach(v=>{v.style.cssText='width:100%;height:100%;object-fit:cover';});}
+function holdHide(){if(MHOLD.parentNode!==document.body)document.body.append(MHOLD);MHOLD.style.cssText=HOLDHID;}
+{const pm=playMedia;playMedia=function(id,kind,onend){const el=pm(id,kind,onend);if(el&&el.tagName==='VIDEO'){holdShow();el._lt=-1;el._st=0;}return el;};}
+{const cs=closeSheet;closeSheet=function(){cs();if(!MHOLD.isConnected||!Show.film)holdHide();};const sh=sheet;sheet=function(...a){const x=sh(...a);if(!MHOLD.isConnected)holdHide();return x;};}
+{const mv=makeVideo;makeVideo=async function(){try{return await mv();}finally{holdHide();}};const ep=endParty;endParty=function(){ep();holdHide();};}
+/* watchdog: a message video that stops moving while it should play is nudged to play again */
+setInterval(()=>{const v=VXEL||(Show.cur&&Show.cur.el);if(!v||v.tagName!=='VIDEO'||v._done||v.ended||!recOn()||REC.paused)return;if(v.currentTime===v._lt){if(++v._st>=2){v._st=0;v.play().catch(()=>{});}}else{v._lt=v.currentTime;v._st=0;}},700);
 
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
