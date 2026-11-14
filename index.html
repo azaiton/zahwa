@@ -2283,6 +2283,85 @@ document.addEventListener('visibilitychange',()=>{if(!recOn())return;const mr=RE
 /* a film has no host: hide the "Coming up" label on the waiting screen */
 {const w=waiting;waiting=function(c,W,H,t,T_){if(!Show.film)return w(c,W,H,t,T_);const n=Show.next;Show.next=Show.parts.length;try{w(c,W,H,t,T_);}finally{Show.next=n;}};}
 
+/* ---------- the greeting video is built from what you choose: parts, song and length ---------- */
+const VXD={open:1,card:1,photos:1,msgs:1,vids:1,fin:1,len:'song'};
+const vxo=()=>Object.assign({},VXD,P.vx||{});
+const vxSong=()=>{const s=P.vxs;return s===undefined||s===null?P.music:s;};
+const isCustId=v=>v==='own'||String(v).startsWith('md:');
+const vxMsgs=()=>P.guests.filter(g=>g.m&&g.m.trim()&&!(g.med&&MED[g.med]));
+const vxVids=()=>P.guests.filter(g=>g.med&&MED[g.med]);
+const msgDur=m=>Math.min(9,3.5+m.length*.05);
+const VDUR={};
+function mediaDur(id,kind){if(VDUR[id])return Promise.resolve(VDUR[id]);return new Promise(r=>{const el=document.createElement(kind==='audio'?'audio':'video');el.preload='metadata';el.muted=true;const done=d=>{clearTimeout(tm);r(VDUR[id]=d);};const tm=setTimeout(()=>done(20),5000);
+ el.onloadedmetadata=()=>{if(isFinite(el.duration)&&el.duration>0)done(el.duration);else{el.currentTime=1e6;el.ondurationchange=()=>{if(isFinite(el.duration)&&el.duration>0)done(el.duration);};}};el.onerror=()=>done(0);el.src=MED[id];});}
+
+/* scenes: a written message with its sender, and a video or voice message that plays inside the video */
+SC.gmsg=function(c,W,H,lt,sc,T_){const s=U(W,H),m=Math.min(W,H);c.save();c.globalAlpha=.18*ease(lt/.6);text(c,'“',W*.2,H*.27,{size:m*.6,fam:FONT.elegant,color:T_.acc,sh:0});text(c,'”',W*.8,H*.8,{size:m*.6,fam:FONT.elegant,color:T_.acc,sh:0});c.restore();
+ lines(c,sc.m,W/2,H*.48,{size:s*7.4,color:T_.ink,max:W*.8,w:700,ml:9,lh:1.5,shc:T_.shc,af:i=>ease((lt-.25-i*.3)/.5)});if(sc.n)text(c,'— '+sc.n,W/2,H*.82,{size:s*6,fam:FONT[T_.f],color:T_.acc,a:ease((lt-1)/.6),max:W*.8,shc:T_.shc});};
+SC.vmsg=function(c,W,H,lt,sc,T_){const s=U(W,H),m=(sc.m||'').trim(),top=sc.n?H*.1:0;if(sc.n)text(c,sc.n,W/2,H*.09,{size:s*7,fam:FONT[T_.f],color:T_.acc,max:W*.86,shc:T_.shc});
+ if(sc.el&&(sc.kind!=='video'||sc.el.videoWidth))drawMedia(c,W,H,sc.el,lt,H*(m?.44:.5)+top*.1,H*(m?.56:.7));if(m)lines(c,m,W/2,H*.85,{size:s*4.6,color:T_.ink,max:W*.84,w:700,ml:2,lh:1.4,shc:T_.shc});};
+
+/* the plan: each chosen thing once, stretched to the song when asked; video messages pause the song */
+async function vxPlan(){const o=vxo(),sg=vxSong(),S=[],add=(k,d,x)=>S.push(Object.assign({k,d},x||{}));
+ if(o.open){if(openKind())add('open',3.4);add('intro',3.4);}
+ if(o.card){add('card',5);if(avOn())add('dance',3.6);}
+ if(P.occ==='reveal'&&P.rv!=='secret'){add('count',4);add('reveal',4.5);}
+ const ph=o.photos?P.photos.filter(i=>IMG[i]):[];ph.forEach((id,i)=>add('photo',3.6,{id,i,sx:1}));if(ph.length>=3)add('collage',3.8,{sx:1});
+ if(o.msgs){const w=(P.msg||'').trim();if(w)add('msg',msgDur(w),{sx:1});vxMsgs().forEach(g=>add('gmsg',msgDur(g.m.trim()),{m:g.m.trim(),n:g.n||'',sx:1}));}
+ if(o.vids)for(const g of vxVids()){const d=await mediaDur(g.med,g.kind);if(d>0)add('vmsg',d+.8,{med:g.med,kind:g.kind,n:g.n||'',m:g.m||'',vid:1});}
+ if(o.fin||!S.length)add('card',5,{fin:1});
+ let sd=0;if(isCustId(sg)){sd=await songMeta(sg);}
+ const songT=()=>S.filter(s=>!s.vid).reduce((a,s)=>a+s.d,0);let note='';
+ if(o.len==='song'&&sd>0){let extra=sd-songT();const st=S.filter(s=>s.sx);
+  if(extra>0&&st.length){const cap=s=>s.k==='photo'?8:s.k==='collage'?8:12;let room=st.reduce((a,s)=>a+cap(s)-s.d,0);const k=Math.min(1,extra/Math.max(.01,room));st.forEach(s=>{const g=(cap(s)-s.d)*k;s.d+=g;extra-=g;});}
+  const fin=S.filter(s=>s.k==='card'&&s.fin).pop();if(extra>0&&fin){const g=Math.min(extra,15);fin.d+=g;extra-=g;}
+  if(extra>1)note='short';else if(extra<-1)note='long';}
+ let t=0;S.forEach(s=>{s.t=t;t+=s.d;});S.T=t;S.sd=sd;S.sg=sg;S.note=note;return S;}
+const vxT=x=>{x=Math.round(x);return Math.floor(x/60)+':'+String(x%60).padStart(2,'0');};
+
+/* recording: real time, video messages play with their own sound while the song waits */
+let VXEL=null;
+makeVideo=async function(){if(BUSY)return;await fontsReady();const S=await vxPlan(),sg=S.sg,cu=isCustId(sg);
+ const kq=P.vq==='fhd'?1.5:1,W=FMT[P.fmt].v[0]*kq,H=FMT[P.fmt].v[1]*kq,cv=h('canvas',{width:W,height:H}),c=cv.getContext('2d');
+ const mime=window.MediaRecorder&&cv.captureStream&&['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
+ if(!mime){toast(T('This browser cannot create video here. Use screen recording instead.'));return;}
+ stopMusic();ac();const st=cv.captureStream(30);if(AC){if(!RD){RD=AC.createMediaStreamDestination();(OUT||MG).connect(RD);}RD.stream.getAudioTracks().forEach(tr=>st.addTrack(tr));}
+ let mr;try{mr=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:6e6*kq*kq});}catch(e){toast(T('This browser cannot create video here. Use screen recording instead.'));return;}
+ const chunks=[];mr.ondataavailable=e=>e.data.size&&chunks.push(e.data);const done=new Promise(r=>mr.onstop=r);let stop=0;const pb=h('i',{}),lab=h('small',{},'0:00 / '+vxT(S.T));
+ sheet(h('h3',{},T('Creating your video…')),cv,h('div',{class:'prog'},pb),lab,h('small',{},T('Keep this screen open until it finishes.')),h('button',{class:'ghost',onclick:()=>{stop=1;}},T('Cancel')));
+ BUSY=1;const draw=t=>{try{frame(c,W,H,t,S);}catch(e){}};draw(0);
+ const loopSong=cu&&S.sd>0&&(vxo().len!=='song'||S.note==='long');
+ const songOn=()=>{if(!sg||sg==='none')return;if(cu){if(musEl&&curMus===sg){musEl.play().catch(()=>{});}else{playTune(sg);if(musEl){musEl.loop=loopSong;if(!loopSong)musEl.onended=null;}}}else playTune(sg);};
+ const songOff=()=>{if(cu&&musEl)musEl.pause();else stopMusic();};
+ songOn();if(cu&&musEl){const t1=performance.now(),o0=sg==='own'?(P.mus0||0):0;await new Promise(r=>{const k=setInterval(()=>{if((!musEl.paused&&musEl.currentTime>o0+.01&&musEl.readyState>=3)||performance.now()-t1>4000){clearInterval(k);r();}},20);});}
+ REC.mr=mr;REC.shift=0;REC.paused=0;mr.start();const t0=performance.now();let faded=0,cur=null;
+ const enter=s=>{if(cur&&cur.vid){stopMedia(VXEL);VXEL=null;cur.el=null;songOn();}cur=s;if(s&&s.vid){songOff();VXEL=playMedia(s.med,s.kind,()=>{});s.el=VXEL;}};
+ await new Promise(res=>{const loop=()=>{if(REC.paused){raf(loop);return;}const t=(performance.now()-t0-REC.shift)/1000,tt=Math.min(t,S.T-.02),s=S.find(x=>tt<x.t+x.d)||S[S.length-1];if(s!==cur)enter(s);
+  draw(tt);pb.style.width=Math.min(100,t/S.T*100)+'%';lab.textContent=vxT(Math.min(t,S.T))+' / '+vxT(S.T);
+  if(!faded&&t>S.T-1.2&&AC){faded=1;MG.gain.setTargetAtTime(0,AC.currentTime,.3);}if(t>=S.T||stop)return res();raf(loop);};loop();});
+ REC.mr=null;if(VXEL){stopMedia(VXEL);VXEL=null;}mr.stop();await done;stopMusic();if(AC){MG.gain.cancelScheduledValues(AC.currentTime);MG.gain.setValueAtTime(.8,AC.currentTime+.05);}BUSY=0;
+ if(stop){closeSheet();return;}result(new Blob(chunks,{type:mime.split(';')[0]}),mime.includes('mp4')?'mp4':'webm');};
+document.addEventListener('visibilitychange',()=>{if(!VXEL)return;if(document.visibilityState==='hidden')VXEL.pause();else VXEL.play().catch(()=>{});});
+
+/* the video sheet: choose what goes in, the song and the length, and see how long it will be */
+{const es=exportSheet;exportSheet=function(k){if(k!=='video')return es(k);const o=vxo(),sg=vxSong(),set=(kk,v)=>{P.vx=Object.assign(vxo(),{[kk]:v});save();exportSheet('video');};
+ const nP=P.photos.filter(i=>IMG[i]).length,nM=vxMsgs().length+((P.msg||'').trim()?1:0),nV=vxVids().length;
+ const chip=(kk,label,n,dis)=>h('button',{class:'chip'+(o[kk]&&!dis?' on':''),disabled:!!dis,onclick:()=>set(kk,o[kk]?0:1)},(o[kk]&&!dis?'✓ ':'')+T(label)+(n!=null?' · '+n:''));
+ const songs=[...mySongs(),...(isCustId(P.music)||P.music==='none'?[]:[P.music]),...(P.music==='own'?['own']:[]),'none'].filter((v,i,a)=>a.indexOf(v)===i);
+ const est=h('div',{class:'mr'},ic('timer'),h('b',{},T('Video length')+': …'));
+ sheet(h('h3',{},'🎬 '+T('Export video')),
+  h('div',{class:'lbl'},T('What to include')),h('div',{class:'row',style:'flex-wrap:wrap;justify-content:flex-start'},chip('open','Opening'),chip('card','Card'),chip('photos','Photos',nP,!nP),chip('msgs','Written messages',nM,!nM),chip('vids','Video messages',nV,!nV),chip('fin','Ending card')),
+  h('div',{class:'lbl'},T('Song')),h('div',{class:'row',style:'flex-wrap:wrap;justify-content:flex-start'},songs.map(v=>h('button',{class:'chip'+(sg===v?' on':''),onclick:()=>{P.vxs=v;save();exportSheet('video');}},(sg===v?'✓ ':'')+songLabel(v)))),
+  isCustId(sg)&&[h('div',{class:'lbl'},T('Length')),h('div',{class:'seg',style:'align-self:flex-start'},[['song',T('Until the song ends')],['content',T('Just the content')]].map(([v,l])=>h('button',{class:o.len===v?'on':'',onclick:()=>set('len',v)},l)))],
+  est,h('div',{class:'lbl'},T('Quality')),h('div',{class:'seg',style:'align-self:flex-start'},[['hd','HD'],['fhd','Full HD']].map(([v,l])=>h('button',{class:(P.vq||'hd')===v?'on':'',onclick:()=>{P.vq=v;save();exportSheet('video');}},l))),
+  h('button',{class:'btn pri',onclick:makeVideo},T('Create greeting video')+' · '+L2(FMT[P.fmt].n)),h('button',{class:'btn',onclick:makeFilm},'🎞 '+T('Create party film (16:9)')),
+  h('small',{},T('The party film plays the show by itself (entrance, story, photos, messages, song, finale, goodbye) and records it as one video.')),h('button',{class:'ghost',onclick:closeSheet},T('Close')));
+ vxPlan().then(S=>{if(!est.isConnected)return;const nV2=S.filter(s=>s.vid).length,b=est.querySelector('b');b.textContent=T('Video length')+': '+vxT(S.T)+(nV2?' · '+nV2+' '+T('video messages'):'');
+  if(S.note==='short')est.after(h('small',{},T('The song is longer than what you chose, so it fades out at the end. Add photos or messages to fill it.')));
+  if(S.note==='long')est.after(h('small',{},T('What you chose is longer than the song, so the song starts again.')));});};}
+Object.assign(AR,{'What to include':'ماذا يتضمن الفيديو','Opening':'الافتتاحية','Card':'البطاقة','Photos':'الصور','Written messages':'الرسائل المكتوبة','Video messages':'رسائل الفيديو','Ending card':'بطاقة الختام','Song':'الأغنية','Length':'المدة','Until the song ends':'حتى تنتهي الأغنية','Just the content':'المحتوى فقط','Video length':'مدة الفيديو','video messages':'رسائل فيديو','Quality':'الجودة',
+ 'The song is longer than what you chose, so it fades out at the end. Add photos or messages to fill it.':'الأغنية أطول مما اخترت، لذا تخفت في النهاية. أضف صوراً أو رسائل لتملأها.','What you chose is longer than the song, so the song starts again.':'ما اخترته أطول من الأغنية، لذا تبدأ الأغنية من جديد.'});
+
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
  for(const id of [...P.photos,P.face,P.face2].filter(Boolean)){const b=await dget('ph:'+id);if(b){try{IMG[id]=await loadImg(b);URLS[id]=IMG[id].src;}catch(e){}}}
