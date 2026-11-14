@@ -2284,6 +2284,13 @@ document.addEventListener('visibilitychange',()=>{if(!recOn())return;const mr=RE
 {const w=waiting;waiting=function(c,W,H,t,T_){if(!Show.film)return w(c,W,H,t,T_);const n=Show.next;Show.next=Show.parts.length;try{w(c,W,H,t,T_);}finally{Show.next=n;}};}
 
 /* ---------- the greeting video is built from what you choose: parts, song and length ---------- */
+const vxKey=g=>g.med||('m:'+(g.n||'')+'|'+(g.m||'').trim().slice(0,60));
+const vxSel=g=>!(P.vxoff||[]).includes(vxKey(g));
+/* choose message by message: tap to add or remove; all / none for each kind */
+function vxPicks(o){const box=[],row=(L,kind)=>{const keys=L.map(vxKey),all=()=>{P.vxoff=(P.vxoff||[]).filter(k=>!keys.includes(k));save();exportSheet('video');},none=()=>{P.vxoff=[...new Set([...(P.vxoff||[]),...keys])];save();exportSheet('video');};
+  return h('div',{class:'vxp'},h('div',{class:'row',style:'justify-content:flex-start;gap:6px'},h('small',{},T(kind==='v'?'Choose the video messages':'Choose the written messages')),h('button',{class:'chip',onclick:all},T('All')),h('button',{class:'chip',onclick:none},T('None'))),
+   h('div',{class:'row',style:'flex-wrap:wrap;justify-content:flex-start;gap:6px'},L.map((g,i)=>{const on=vxSel(g),k=vxKey(g);return h('button',{class:'chip'+(on?' on':''),onclick:()=>{const off=new Set(P.vxoff||[]);on?off.add(k):off.delete(k);P.vxoff=[...off];save();exportSheet('video');}},on?ic('check'):ic(kind==='v'?(g.kind==='audio'?'mic':'video'):'chat'),' ',g.n||(T('Message')+' '+(i+1)));})));};
+ if(o.vids&&vxVids().length)box.push(row(vxVids(),'v'));if(o.msgs&&vxMsgs().length)box.push(row(vxMsgs(),'m'));return box;}
 const VXD={open:1,card:1,photos:1,msgs:1,vids:1,fin:1,len:'song'};
 const vxo=()=>Object.assign({},VXD,P.vx||{});
 const vxSong=()=>{const s=P.vxs;return s===undefined||s===null?P.music:s;};
@@ -2307,8 +2314,8 @@ async function vxPlan(){const o=vxo(),sg=vxSong(),S=[],add=(k,d,x)=>S.push(Objec
  if(o.card){add('card',5);if(avOn())add('dance',3.6);}
  if(P.occ==='reveal'&&P.rv!=='secret'){add('count',4);add('reveal',4.5);}
  const ph=o.photos?P.photos.filter(i=>IMG[i]):[];ph.forEach((id,i)=>add('photo',3.6,{id,i,sx:1}));if(ph.length>=3)add('collage',3.8,{sx:1});
- if(o.msgs){const w=(P.msg||'').trim();if(w)add('msg',msgDur(w),{sx:1});vxMsgs().forEach(g=>add('gmsg',msgDur(g.m.trim()),{m:g.m.trim(),n:g.n||'',sx:1}));}
- if(o.vids)for(const g of vxVids()){const d=await mediaDur(g.med,g.kind);if(d>0)add('vmsg',d+.8,{med:g.med,kind:g.kind,n:g.n||'',m:g.m||'',vid:1});}
+ if(o.msgs){const w=(P.msg||'').trim();if(w)add('msg',msgDur(w),{sx:1});vxMsgs().filter(vxSel).forEach(g=>add('gmsg',msgDur(g.m.trim()),{m:g.m.trim(),n:g.n||'',sx:1}));}
+ if(o.vids)for(const g of vxVids().filter(vxSel)){const d=await mediaDur(g.med,g.kind);if(d>0)add('vmsg',d+.8,{med:g.med,kind:g.kind,n:g.n||'',m:g.m||'',vid:1});}
  if(o.fin||!S.length)add('card',5,{fin:1});
  let sd=0;if(isCustId(sg)){sd=await songMeta(sg);}
  const songT=()=>S.filter(s=>!s.vid).reduce((a,s)=>a+s.d,0);let note='';
@@ -2345,12 +2352,12 @@ document.addEventListener('visibilitychange',()=>{if(!VXEL)return;if(document.vi
 
 /* the video sheet: choose what goes in, the song and the length, and see how long it will be */
 {const es=exportSheet;exportSheet=function(k){if(k!=='video')return es(k);const o=vxo(),sg=vxSong(),set=(kk,v)=>{P.vx=Object.assign(vxo(),{[kk]:v});save();exportSheet('video');};
- const nP=P.photos.filter(i=>IMG[i]).length,nM=vxMsgs().length+((P.msg||'').trim()?1:0),nV=vxVids().length;
+ const nP=P.photos.filter(i=>IMG[i]).length,nM=vxMsgs().length+((P.msg||'').trim()?1:0),nV=vxVids().length,sV=vxVids().filter(vxSel).length,sM=vxMsgs().filter(vxSel).length+((P.msg||'').trim()?1:0);
  const chip=(kk,label,n,dis)=>h('button',{class:'chip'+(o[kk]&&!dis?' on':''),disabled:!!dis,onclick:()=>set(kk,o[kk]?0:1)},(o[kk]&&!dis?'✓ ':'')+T(label)+(n!=null?' · '+n:''));
  const songs=[...mySongs(),...(isCustId(P.music)||P.music==='none'?[]:[P.music]),...(P.music==='own'?['own']:[]),'none'].filter((v,i,a)=>a.indexOf(v)===i);
  const est=h('div',{class:'mr'},ic('timer'),h('b',{},T('Video length')+': …'));
  sheet(h('h3',{},'🎬 '+T('Export video')),
-  h('div',{class:'lbl'},T('What to include')),h('div',{class:'row',style:'flex-wrap:wrap;justify-content:flex-start'},chip('open','Opening'),chip('card','Card'),chip('photos','Photos',nP,!nP),chip('msgs','Written messages',nM,!nM),chip('vids','Video messages',nV,!nV),chip('fin','Ending card')),
+  h('div',{class:'lbl'},T('What to include')),h('div',{class:'row',style:'flex-wrap:wrap;justify-content:flex-start'},chip('open','Opening'),chip('card','Card'),chip('photos','Photos',nP,!nP),chip('msgs','Written messages',sM<nM?sM+'/'+nM:nM,!nM),chip('vids','Video messages',sV<nV?sV+'/'+nV:nV,!nV),chip('fin','Ending card')),vxPicks(o),
   h('div',{class:'lbl'},T('Song')),h('div',{class:'row',style:'flex-wrap:wrap;justify-content:flex-start'},songs.map(v=>h('button',{class:'chip'+(sg===v?' on':''),onclick:()=>{P.vxs=v;save();exportSheet('video');}},(sg===v?'✓ ':'')+songLabel(v)))),
   isCustId(sg)&&[h('div',{class:'lbl'},T('Length')),h('div',{class:'seg',style:'align-self:flex-start'},[['song',T('Until the song ends')],['content',T('Just the content')]].map(([v,l])=>h('button',{class:o.len===v?'on':'',onclick:()=>set('len',v)},l)))],
   est,h('div',{class:'lbl'},T('Quality')),h('div',{class:'seg',style:'align-self:flex-start'},[['hd','HD'],['fhd','Full HD']].map(([v,l])=>h('button',{class:(P.vq||'hd')===v?'on':'',onclick:()=>{P.vq=v;save();exportSheet('video');}},l))),
@@ -2374,6 +2381,7 @@ function vxUnlock(){try{ac();if(AC&&AC.state!=='running')AC.resume();}catch(e){}
 {const sm=stopMedia;stopMedia=function(el){if(el&&Object.values(VXPOOL).includes(el)){clearTimeout(el._t);el.pause();if(el.parentNode)el.remove();return;}sm(el);};}
 {const mv=makeVideo;makeVideo=function(){vxUnlock();return mv();};const mf=makeFilm;makeFilm=function(){vxUnlock();return mf();};}
 MHOLD.style.cssText='position:fixed;left:0;top:0;width:120px;height:120px;opacity:.01;overflow:hidden;pointer-events:none;z-index:-1';
+Object.assign(AR,{'Choose the video messages':'اختر رسائل الفيديو','Choose the written messages':'اختر الرسائل المكتوبة','All':'الكل','None':'لا شيء','Message':'رسالة'});
 
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
