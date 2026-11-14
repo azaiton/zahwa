@@ -4969,6 +4969,51 @@ const ORDN={cake:['Birthday cake, made to order','كيكة عيد ميلاد ح�
 {const d0=PANEL.details;PANEL.details=()=>{if(P.occ!=='order')return d0();return[inp('name',T('What was ordered')),inp('price',T('Price (optional)')),inp('cta',T('Button text'),{placeholder:shCta()}),brRow()];};}
 Object.assign(AR,{'What was ordered':'ما الذي تم طلبه','Price (optional)':'السعر (اختياري)'});
 
+/* ---------- making of: the stages of an order in photos, as a post and as a video; and a storyboard of any video's scenes ---------- */
+Object.assign(ICONS,{film:'M4 5h16v14H4zM8 5v14M16 5v14M4 9.5h4M4 14.5h4M16 9.5h4M16 14.5h4'});
+const MKS={cake:[['Baking the layers','خَبز الطبقات'],['Filling and stacking','الحشو والتركيب'],['Decorating by hand','التزيين باليد'],['Ready for you','جاهزة لكم']],gift:[['Choosing the pieces','اختيار القطع'],['Arranging the box','ترتيب العلبة'],['Wrapping and ribbon','التغليف والشريط'],['Ready to deliver','جاهزة للتوصيل']],other:[['Preparing','التحضير'],['Putting it together','التجهيز'],['Final touches','اللمسات الأخيرة'],['Ready for you','جاهز لكم']]};
+OCC.push({id:'making',e:'🎬',n:['Making of','كواليس التحضير'],f:'item',th:['ivory','rose','gala','mint','sunset','mono'],mu:'chill',h:['How we make it','هكذا نحضّره'],w:[["Every order is made by hand, step by step ✨","A look behind the scenes of your order 🎬","From the first step to your door 💝"],["كل طلب نحضّره بأيدينا خطوة بخطوة ✨","نظرة على كواليس تحضير طلبكم 🎬","من أول خطوة حتى باب بيتكم 💝"]]});
+SHOP.splice(Math.max(0,SHOP.indexOf('steps')),0,'making');OCCIC.making='film';OCCOL.making='#ff8a3d';
+SHT.making=[['silk',0,'s_making','elegant'],['marble',0,'s_making','elegant'],['boho',0,'s_making','modern'],['bokeh',0,'s_making','modern'],['watercolor',0,'s_making',''],['aurora',0,'s_making','modern'],['terrazzo',0,'s_making','clean'],['mesh',1,'s_making','modern']];
+{const tp=tpls;tpls=function(id){const L=tp(id);if(id==='making'){const k=P.lang==='ar'?1:0,S=MKS[BR.type]||MKS.other;L.forEach(d=>{d.items=S.map(q=>({n:q[k],p:''}));d.price='';d.old='';d.off='';});}return L;};}
+{const d0=PANEL.details;PANEL.details=()=>{if(P.occ!=='making')return d0();return[inp('name',T('What you are making (optional)')),h('div',{class:'lbl'},T('Stages')),h('small',{},T('One stage for each photo, in the order of your photos.')),shItems('Stage','','Add a stage',6),inp('cta',T('Button text'),{placeholder:shCta()}),brRow()];};}
+/* a stage is a caption with the photo in the same position */
+function mkStages(){const it=(P.items||[]).map(q=>String(q&&q.n||'').trim()),ph=P.photos.filter(i=>IMG[i]);while(it.length&&!it[it.length-1])it.pop();const n=Math.min(6,Math.max(it.length,ph.length,2)),o=[];for(let i=0;i<n;i++)o.push({m:it[i]||'',id:ph[i]||null});return o;}
+function mkTile(c,E,id,x,y,w,h,r){const im=id&&IMG[id];c.save();rr(c,x,y,w,h,r);c.clip();if(im)cover(c,im,x,y,w,h);else{const g=c.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,E.pal[0]);g.addColorStop(1,E.pal[1%E.pal.length]);c.fillStyle=g;c.fillRect(x,y,w,h);shIc(c,shKind(),x+w/2,y+h/2,Math.min(w,h)*.4,'rgba(255,255,255,.9)',1.3);}c.restore();}
+function sMaking(c,W,H,t){const E=shE(c,W,H,t),{m,s,wide,tall,lite,A,D}=E,bo=brOn(),CB=lite?'rgba(255,255,255,.95)':hexA(m2mix(D,'#0b0714',.3),.93),CI=lite?'#1d1530':'#ffffff',CA=lite?A:E.pal[0],x=W*(wide?.07:.05),y=H*(tall?.08:.045),w=W-2*x,yb=bo?E.fy-m*.085:H*(tall?.92:.955),h=yb-y,cx=W/2;
+ shCard(c,E,x,y,w,h,CB,CA);const I=shI(c,E,cx,w*.86,{ink:CI,acc:CA,bbg:CA,bfg:shOn(CA)});let yy=y+h*.04;const hh=I.head(wide?6.5:8);if(hh){hh[1](yy+hh[0]/2);yy+=hh[0];}if(E.nm){yy+=s*4;text(c,E.nm,cx,yy,{size:s*4.6,fam:FONT.clean,color:CA,w:800,max:w*.82,sh:0,fx:0});yy+=s*3;}
+ const ct=I.cta(),g0=yy+s*3.5,g1=yb-h*.03-(ct?ct[0]+s*3:0),ST=mkStages().slice(0,tall?6:4),n=ST.length,cols=wide?n:(n<=1?1:2),rows=Math.ceil(n/cols),gap=m*.024,gw=w*.9,tw=(gw-gap*(cols-1))/cols,rh=(g1-g0-gap*(rows-1))/rows,cap=ST.some(q=>q.m)?Math.min(rh*.26,s*9):0,th=rh-cap;
+ ST.forEach((q,i)=>{const r=Math.floor(i/cols),inRow=r===rows-1?n-r*cols:cols,k=i-r*cols,kk=RTL?inRow-1-k:k,rowW=inRow*tw+(inRow-1)*gap,tx=cx-rowW/2+kk*(tw+gap),ty=g0+r*(rh+gap),br=Math.min(tw,th)*.1+m*.012,bx=RTL?tx+tw-br*1.3:tx+br*1.3,by=ty+br*1.3;
+  c.save();c.shadowColor='rgba(0,0,0,.25)';c.shadowBlur=m*.02;c.fillStyle='#ffffff';rr(c,tx,ty,tw,th,m*.024);c.fill();c.restore();mkTile(c,E,q.id,tx,ty,tw,th,m*.024);c.fillStyle=CA;c.beginPath();c.arc(bx,by,br,0,7);c.fill();c.strokeStyle='#ffffff';c.lineWidth=br*.16;c.stroke();text(c,String(i+1),bx,by+br*.05,{size:br*1.1,fam:FONT.clean,color:shOn(CA),w:900,sh:0,fx:0});
+  if(q.m)lines(c,q.m,tx+tw/2,ty+th+cap*.55,{size:Math.min(cap*.36,s*3.6),fam:FONT.clean,color:CI,w:700,max:tw*.96,ml:2,lh:1.2,sh:0,fx:0});});
+ if(ct)ct[1](yb-h*.03-ct[0]/2);brPill(c,W,H,E);}
+LX.s_making=sMaking;Object.defineProperty(LNAME,'s_making',{value:['Making of','كواليس'],enumerable:false});
+
+/* the video: the card, then every stage as a full photo with its caption, then the shop */
+SC.stage=function(c,W,H,lt,sc,T_){const im=sc.id&&IMG[sc.id];if(!im)return SC.step(c,W,H,lt,sc,T_);const s=U(W,H),cx=W/2,Y='#ffd23f',k=back((lt-.15)/.5),n=sc.n||1,bw=W*.86,gp=W*.012,sw=(bw-gp*(n-1))/n;
+ c.fillStyle='#000000';c.fillRect(-W*.2,-H*.2,W*1.4,H*1.4);cover(c,im,-W*.03,-H*.03,W*1.06,H*1.06,1+.06*Math.min(1,lt/Math.max(1,sc.d||3)));
+ let g=c.createLinearGradient(0,H*.42,0,H);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.85)');c.fillStyle=g;c.fillRect(-W*.2,H*.42,W*1.4,H*.8);g=c.createLinearGradient(0,0,0,H*.24);g.addColorStop(0,'rgba(0,0,0,.55)');g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(-W*.2,-H*.2,W*1.4,H*.44);
+ for(let i=0;i<n;i++){const bx=RTL?cx+bw/2-(i+1)*sw-i*gp:cx-bw/2+i*(sw+gp),by=H*.045,bh=Math.max(2,s*.7),f=i<sc.i?1:i===sc.i?Math.min(1,lt/Math.max(.5,(sc.d||3)-.3)):0;c.fillStyle='rgba(255,255,255,.35)';rr(c,bx,by,sw,bh,bh/2);c.fill();if(f>0){c.fillStyle='#ffffff';rr(c,RTL?bx+sw*(1-f):bx,by,sw*f,bh,bh/2);c.fill();}}
+ text(c,hl(1),cx,H*.095,{size:s*4,color:'#ffffff',w:800,a:ease(lt/.4)*.95,max:W*.8,sh:0,fx:0});
+ if(k>0){c.save();c.translate(cx,H*.7);c.scale(k,k);c.fillStyle=Y;c.beginPath();c.arc(0,0,s*7,0,7);c.fill();text(c,String((sc.i||0)+1),0,s*.3,{size:s*8.5,fam:FONT.clean,color:'#1d1530',w:900,sh:0,fx:0});c.restore();}
+ if(sc.m)m2lines(c,sc.m,cx,H*.83,{size:s*7,fam:brF(sc.m,FONT[T_.f]||FONT.clean),color:'#ffffff',max:W*.84,ml:2,lh:1.2},lt-.35);};
+M2NEW.add('stage');
+{const p0=shPlan;shPlan=function(){if(P.occ!=='making')return p0();const S=[{k:'card',d:4.2}],ST=mkStages();ST.forEach((q,i)=>S.push({k:'stage',d:3.2,i,m:q.m,id:q.id,n:ST.length}));S.push(brOn()?{k:'brand',d:4.2}:{k:'card',d:3.6,fin:1});return S;};}
+
+/* storyboard: every scene of the video as a still, to check the order and to post as a set of story images */
+STOOLS.push(['board','list','Storyboard']);
+function boardFrames(){const S=timeline(),o=[];S.forEach(q=>{if(q.d>=1.2)o.push({q,t:q.t+Math.min(q.d-.3,Math.max(q.d*.8,1.7))});});return{S,o};}
+function boardPanel(){const [w,hh]=FMT[P.fmt].i,tw=hh>w?112:170,th=Math.round(tw*hh/w),kr=RTL;let cells=[];try{RTL=P.lang==='ar';const {S,o}=boardFrames();cells=o.map((f,i)=>{const cv=h('canvas',{width:tw*2,height:th*2,style:`width:${tw}px;height:${th}px;border-radius:10px;display:block`});try{frame(cv.getContext('2d'),tw*2,th*2,f.t,S);}catch(e){}
+   return h('button',{class:'bd','aria-label':T('Scene')+' '+(i+1),onclick:()=>{P.mode='video';ch();PT0=performance.now()-f.q.t*1000;}},cv,h('b',{},String(i+1)),h('small',{},f.q.d.toFixed(1)+' '+L2(['s','ث'])));});}catch(e){}RTL=kr;
+ return[h('small',{},T('Every scene of the video, in order. Tap one to play from there.')),h('div',{class:'row scroll bds'},cells),h('button',{class:'btn pri',onclick:boardSave},'⬆ '+T('Save every scene as an image')),h('small',{},T('Post the images one after another as a story set.'))];}
+async function boardSave(){const [w,hh]=FMT[P.fmt].i,files=[],kr=RTL;toast(T('Preparing the images…'));await new Promise(r=>setTimeout(r,60));let B;try{RTL=P.lang==='ar';B=boardFrames();}catch(e){RTL=kr;return;}
+ for(let i=0;i<B.o.length;i++){const cv=document.createElement('canvas');cv.width=w;cv.height=hh;try{RTL=P.lang==='ar';frame(cv.getContext('2d'),w,hh,B.o[i].t,B.S);}catch(e){RTL=kr;continue;}RTL=kr;const b=await new Promise(r=>cv.toBlob(r,'image/jpeg',.92));if(b)files.push(new File([b],'zahwa-'+P.occ+'-'+String(i+1).padStart(2,'0')+'.jpg',{type:'image/jpeg'}));await new Promise(r=>setTimeout(r,0));}
+ if(!files.length){toast(T('Nothing to save'));return;}try{if(navigator.canShare&&navigator.canShare({files})){await navigator.share({files});return;}}catch(e){if(e&&e.name==='AbortError')return;}
+ for(const f of files)await saveFile(f,f.name);toast(files.length+' '+T('images saved'));}
+{const o8=openTool;openTool=function(id){if(id==='board'){toolSheet('board',T('Storyboard'),boardPanel());return;}o8(id);};}
+document.head.append(h('style',{},'.bds{gap:10px;align-items:flex-start;padding-bottom:4px}.bd{position:relative;flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;color:inherit;padding:0}.bd b{position:absolute;top:6px;inset-inline-start:6px;background:#ffd23f;color:#1d1530;border-radius:99px;min-width:22px;height:22px;font-size:12px;line-height:22px;text-align:center}.bd small{opacity:.7}'));
+Object.assign(AR,{'What you are making (optional)':'ما الذي تحضّرونه (اختياري)','Stages':'المراحل','Stage':'المرحلة','Add a stage':'أضف مرحلة','One stage for each photo, in the order of your photos.':'مرحلة لكل صورة، بترتيب صوركم.','Storyboard':'لوحة المشاهد','Scene':'المشهد','Every scene of the video, in order. Tap one to play from there.':'كل مشاهد الفيديو بالترتيب. اضغط على مشهد لتشغيله.','Save every scene as an image':'احفظ كل مشهد كصورة','Post the images one after another as a story set.':'انشر الصور واحدة تلو الأخرى كسلسلة ستوري.','Preparing the images…':'جارٍ تجهيز الصور…','Nothing to save':'لا يوجد ما يُحفظ','images saved':'صور حُفظت'});
+
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
  for(const id of [...P.photos,P.face,P.face2].filter(Boolean)){const b=await dget('ph:'+id);if(b){try{IMG[id]=await loadImg(b);URLS[id]=IMG[id].src;}catch(e){}}}
