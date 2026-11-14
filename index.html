@@ -1765,7 +1765,7 @@ function thFix(T_){const a=ARTS[P.art];if(a){const i=(P.pal||0)%a.pals.length,k=
  const old=T_.shc&&OLDW.includes(P.world),f=P.font;if(!old&&!f)return T_;const k=T_.id+'|'+(old?1:0)+'|'+(f||'');return TFX[k]||(TFX[k]=Object.assign({},T_,old?{ink:'#ffffff',acc:'#ffe08a',shc:undefined,bk:'#2b1b3d'}:{},f?{f}:{}));}
 {const b1=bg;bg=function(c,W,H,t,T_){const a=ARTS[P.art];if(!a)return b1(c,W,H,t,T_);const p=a.pals[(P.pal||0)%a.pals.length];c.save();a.draw(c,W,H,t,p);c.restore();if(onShow(c)){const now=performance.now(),dt=Math.min(.05,Math.max(0,(now-WS.last)/1000));WS.last=now;wUse(c,W,H,t);BW.tick(dt,beat()*.25);if(!p.lite)BW.aurora(.5);}if(!avOn())glitter(c,W,H,t,T_);};}
 {const s2=PANEL.style;PANEL.style=()=>{const a=s2(),A=ARTS[P.art];a.unshift(fld(T('Art background'),h('div',{class:'row',style:'justify-content:flex-start'},[['',T('None (use a scene)')],...Object.keys(ARTS).map(k=>[k,L2(ARTS[k].n)])].map(([v,l])=>h('button',{class:'chip'+((P.art||'')===v?' on':''),onclick:()=>{P.art=v;P.pal=0;ch();}},l))),T('Art backgrounds have their own colours. Scenes use the colour themes below.')),
-  A&&fld(T('Colours'),h('div',{class:'seg'},A.pals.map((p,i)=>h('button',{class:(P.pal||0)===i?'on':'',onclick:()=>{P.pal=i;ch();}},h('span',{class:'dot',style:`background:linear-gradient(135deg,${p.g[1]} 50%,${p.acc} 50%)`}))))));return a;};}
+  A&&fld(T('Colours'),palRow()));return a;};}
 
 /* ---------- design gallery: two columns with filters, so many designs can be compared at once ---------- */
 let TF='all';
@@ -4938,7 +4938,7 @@ function czLayouts(){const nm=k=>L2(LNAME[k]||[k,k]);if(isShop()){const u=[];(SH
 function czPanel(){const A=ARTS[P.art],s=sLay(),ar=P.lang==='ar',key=ar?'fontAr':'fontEn',list=ar?FAR:FEN,LL=czLayouts(),lb=t=>h('div',{class:'lbl'},t),chips=(L,cur,set)=>h('div',{class:'row scroll'},L.map(([v,l])=>h('button',{class:'chip'+(cur===v?' on':''),onclick:()=>{set(v);ch();}},l)));
  return[h('div',{class:'czh'},T('Customise this design')),
   lb(T('Background')),chips([!s&&['',T('None (use a scene)')],...Object.keys(ARTS).map(k=>[k,L2(ARTS[k].n)])].filter(Boolean),P.art||'',v=>{P.art=v;P.pal=0;}),
-  A&&A.pals.length>1&&[lb(T('Colours')),h('div',{class:'seg'},A.pals.map((p,i)=>h('button',{class:(P.pal||0)%A.pals.length===i?'on':'','aria-label':T('Colours')+' '+(i+1),onclick:()=>{P.pal=i;ch();}},h('span',{class:'dot',style:`background:linear-gradient(135deg,${p.g[1]} 50%,${p.acc} 50%)`}))))],
+  A&&A.pals.length>1&&[lb(T('Colours')),palRow()],
   LL.length>1&&[lb(T('Layout')),chips(LL,P.layout,v=>{P.layout=v;})],
   lb(T('Font')),h('div',{class:'row scroll'},h('button',{class:'fchip'+(!P[key]?' on':''),onclick:()=>{P[key]='';ch();}},T('Automatic')),list.map(n=>h('button',{class:'fchip'+(P[key]===n?' on':''),style:`font-family:'${n}',var(--body)`,onclick:()=>{P[key]=n;ch();}},ar?'مبروك':'Hello',h('small',{},n)))),
   isShop()&&h('label',{class:'chk'},h('input',{type:'checkbox',checked:!P.nocta,onchange:e=>{P.nocta=!e.target.checked;ch();}}),h('span',{},T('Show the order button'))),
@@ -5048,6 +5048,20 @@ const OPN={
 {const o0=SC.open;SC.open=function(c,W,H,lt,sc,T_){const f=OPN[openKind()];if(f)return f(c,W,H,lt,sc,T_);return o0(c,W,H,lt,sc,T_);};}
 function openPick(){const L=[['',T('Automatic')],['envelope',T('Envelope')],['gift',T('Gift box')],['curtain',T('Curtain')],['blocks',T('Colour blocks')],['iris',T('Spotlight')],['balloons',T('Balloons')],['ribbon',T('Ribbon')],['title',T('Big title')],['none',T('None')]];return h('div',{class:'row scroll'},L.map(([v,l])=>h('button',{class:'chip'+((P.open||'')===v?' on':''),onclick:()=>{P.open=v;if(P.mode!=='party')P.mode='video';ch();PT0=performance.now();}},l)));}
 Object.assign(AR,{'Spotlight':'دائرة ضوء','Ribbon':'شريط هدية','Big title':'عنوان كبير','Balloons':'بالونات','Colour blocks':'مكعبات ملونة'});
+
+/* ---------- more colours for every art background: each one also comes in pink, rose, coral, gold, green, teal, blue and purple ---------- */
+const c2hsl=x=>{const n=parseInt(x.slice(1),16),r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn;if(!d)return[0,0,l];const s=d/(1-Math.abs(2*l-1)),h=mx===r?((g-b)/d+6)%6:mx===g?(b-r)/d+2:(r-g)/d+4;return[h*60,s,l];},
+ hsl2c=(h,s,l)=>{h=((h%360)+360)%360;s=Math.max(0,Math.min(1,s));l=Math.max(0,Math.min(1,l));const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>Math.round(255*(l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1))));return'#'+[f(0),f(8),f(4)].map(v=>v.toString(16).padStart(2,'0')).join('');},
+ hueD=(a,b)=>{const d=Math.abs(a-b)%360;return d>180?360-d:d;};
+const HUES=[335,352,16,40,145,178,214,268];
+function palTint(p,H){const ha=m2hex(p.acc)?c2hsl(p.acc):[H,0,.5],bgf=x=>{if(!m2hex(x))return x;const [h,s,l]=c2hsl(x);return s<.06?x:hsl2c(H,s,l);},rot=x=>{if(!m2hex(x))return x;const [h,s,l]=c2hsl(x);return s<.06?x:hsl2c(H+(h-ha[0]),s,l);};
+ return Object.assign({},p,{g:p.g.map(bgf),ink:bgf(p.ink),acc:hsl2c(H,Math.max(ha[1],.55),p.lite?Math.min(ha[2],.5):Math.max(ha[2],.66)),x:Array.isArray(p.x)?p.x.map(rot):p.x,tint:1});}
+Object.keys(ARTS).forEach(k=>{const A=ARTS[k];if(!A||!Array.isArray(A.pals)||A.n0)return;A.n0=A.pals.length;const own=A.pals.slice(),bases=[own.find(p=>p.lite),own.find(p=>!p.lite)].filter(Boolean);
+ bases.forEach(b=>{HUES.forEach(H=>{if(own.some(p=>!!p.lite===!!b.lite&&m2hex(p.acc)&&c2hsl(p.acc)[1]>.2&&hueD(c2hsl(p.acc)[0],H)<18&&m2hex(p.g[1])&&(c2hsl(p.g[1])[1]<.06||hueD(c2hsl(p.g[1])[0],H)<40)))return;try{A.pals.push(palTint(b,H));}catch(e){}});});});
+/* ready-made designs keep the colours they were drawn with */
+{const tp=tpls;tpls=function(id){const L=tp(id);L.forEach(d=>{const A=d.art&&ARTS[d.art];if(A&&A.n0)d.pal=(d.pal||0)%A.n0;});return L;};}
+function palRow(){const A=ARTS[P.art];if(!A)return null;const cur=(P.pal||0)%A.pals.length;return h('div',{class:'row scroll pls'},A.pals.map((p,i)=>h('button',{class:'pl'+(cur===i?' on':''),'aria-label':T('Colours')+' '+(i+1),onclick:()=>{P.pal=i;ch();}},h('span',{style:`background:linear-gradient(135deg,${p.g[1]} 50%,${p.acc} 50%)`}))));}
+document.head.append(h('style',{},'.pls{gap:6px;padding:2px 0 6px}.pl{flex:none;width:46px;height:46px;border-radius:50%;padding:4px;background:none;border:2px solid transparent}.pl.on{border-color:#ff5c8a}.pl span{display:block;width:100%;height:100%;border-radius:50%;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset}'));
 
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
