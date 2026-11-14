@@ -4895,6 +4895,28 @@ M2NEW.add('step');
 document.head.append(h('style',{},'.sh3.one{grid-template-columns:1fr auto}'));
 Object.assign(AR,{'Steps':'الخطوات','Step':'الخطوة','Add a step':'أضف خطوة','Prize':'الجائزة','How to enter':'طريقة المشاركة','Draw date':'موعد السحب','Days and hours':'الأيام والساعات','Days':'الأيام','Hours':'الساعات','Add a line':'أضف سطراً','Extra line, such as a date (optional)':'سطر إضافي، مثل التاريخ (اختياري)'});
 
+/* ---------- the shop as a file: save it on one device, open it on another ---------- */
+const BRK=['type','name','tag','phone','handle','addr','cur'];
+async function brandExport(){if(!brHas()){toast(T('Add your shop details first'));return;}const s={on:BR.on?1:0};BRK.forEach(k=>{s[k]=BR[k]||'';});const out={app:'zahwa',v:1,shop:s,logo:null};
+ try{if(BR.logo){const b=await dget('brandlogo');if(b)out.logo=await b2u(b);}}catch(e){}
+ const nm=(brS('name')||'shop').replace(/[\\/:*?"<>|]+/g,'').trim().slice(0,40)||'shop';await saveFile(new Blob([JSON.stringify(out)],{type:'application/json'}),nm+'.zahwa-shop.json');}
+async function brandApply(o){const s=o.shop||{};BRK.forEach(k=>{BR[k]=String(s[k]==null?'':s[k]).slice(0,120);});if(!['cake','gift','other'].includes(BR.type))BR.type='other';BR.on=s.on===0?0:1;BRIMG=null;BR.logo=0;
+ if(/^data:image\/(png|jpeg|webp);base64,/.test(o.logo||'')){try{const im=await loadImg(await u2b(o.logo)),k=Math.min(1,512/Math.max(im.width,im.height)),cc=h('canvas',{width:Math.round(im.width*k),height:Math.round(im.height*k)});cc.getContext('2d').drawImage(im,0,0,cc.width,cc.height);await dset('brandlogo',await new Promise(r=>cc.toBlob(r,'image/png')));BRIMG=cc;BR.logo=1;}catch(e){}}
+ if(!BR.logo){try{await ddel('brandlogo');}catch(e){}}
+ clearTimeout(brT);await dset('brand',BR);TC.clear();DIRTY=1;render();brandSheet();toast(T('Your shop was added'));}
+async function brandImport(f){let o=f;if(f instanceof Blob){o=null;if(f.size<8e6){try{o=JSON.parse(await f.text());}catch(e){}}}
+ if(!o||o.app!=='zahwa'||!o.shop||typeof o.shop!=='object'){toast(T('This file is not a shop file.'));return;}
+ if(!brHas())return brandApply(o);
+ closeSheet();sheet(h('h3',{},T('Replace the shop on this device?')),h('small',{},T('On this device')+': '+(brS('name')||T('Logo added'))),h('small',{},T('In the file')+': '+(String(o.shop.name||'').trim().slice(0,80)||T('My shop'))),
+  h('div',{class:'row'},h('button',{class:'btn pri',onclick:()=>brandApply(o)},T('Replace')),h('button',{class:'btn',onclick:brandSheet},T('Cancel'))));}
+{const b0=brandSheet;brandSheet=function(){b0();const card=$('sheet').querySelector('.card'),done=card&&card.lastElementChild;if(!done)return;
+ done.before(h('div',{class:'lbl'},T('Move to another device')),h('small',{},T('Save your shop as a file, then open it in Zahwa on another phone or tablet.')),
+  h('div',{class:'row',style:'justify-content:flex-start'},h('button',{class:'btn',onclick:brandExport},'⬆ '+T('Save shop file')),h('label',{class:'btn'},'📥 '+T('Open shop file'),h('input',{type:'file',accept:'.json,application/json',hidden:true,onchange:e=>{const f=e.target.files[0];if(f)brandImport(f);}}))));};}
+/* a shop file opened from "Open a show file" still lands in the right place */
+{const i0=importProject;importProject=async function(f){try{if(f.size<8e6){const o=JSON.parse(await f.text());if(o&&o.app==='zahwa'&&o.shop&&!o.project)return brandImport(o);}}catch(e){}return i0(f);};}
+Object.assign(AR,{'Move to another device':'النقل إلى جهاز آخر','Save your shop as a file, then open it in Zahwa on another phone or tablet.':'احفظ متجرك كملف، ثم افتحه في زهوة على هاتف أو جهاز لوحي آخر.','Save shop file':'حفظ ملف المتجر','Open shop file':'فتح ملف المتجر','Add your shop details first':'أضف بيانات متجرك أولاً','This file is not a shop file.':'هذا الملف ليس ملف متجر.','Your shop was added':'تمت إضافة متجرك',
+'Replace the shop on this device?':'هل تريد استبدال المتجر على هذا الجهاز؟','On this device':'على هذا الجهاز','In the file':'في الملف','Replace':'استبدال','Cancel':'إلغاء'});
+
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
  for(const id of [...P.photos,P.face,P.face2].filter(Boolean)){const b=await dget('ph:'+id);if(b){try{IMG[id]=await loadImg(b);URLS[id]=IMG[id].src;}catch(e){}}}
