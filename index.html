@@ -4612,7 +4612,7 @@ const shHex=x=>{x=String(x||'');if(/^#[0-9a-f]{3}$/i.test(x))x='#'+x[1]+x[1]+x[2
 const shNum=v=>/^[\d.,\s٠-٩٫٬]+$/.test(v);
 const shPrice=v=>{v=String(v||'').trim();if(!v)return'';const r=shNum(v)&&brS('cur')?v+' '+brS('cur'):v;return /[؀-ۿ]/.test(r)?r:ltr(r);};
 const shOff=()=>{const o=String(P.off||'').trim();if(o)return ltr(o);const n=x=>parseFloat(String(x||'').replace(/[^\d.]/g,'')),a=n(P.old),b=n(P.price);return a>b&&b>0?ltr('-'+Math.round((1-b/a)*100)+'%'):'';};
-const shCta=()=>String(P.cta||'').trim()||L2(P.occ==='ordernow'?['Message us','راسلونا']:['Order now','اطلب الآن']);
+const shCta=()=>String(P.cta||'').trim()||L2(P.occ==='ordernow'?['Message us','راسلونا']:P.occ==='thankc'?['Order again','اطلب مجدداً']:['Order now','اطلب الآن']);
 const shUntil=()=>{const u=String(P.until||'').trim();return u?L2(['Offer ends ','العرض حتى '])+u:'';};
 const shKind=()=>BR.type==='gift'?'gift':BR.type==='cake'?'cake':(OCCIC[P.occ]||'spark');
 function shIc(c,k,x,y,size,col,lw){const p=P2D[k]||(P2D[k]=new Path2D(ICONS[k]||ICONS.spark));c.save();c.translate(x-size/2,y-size/2);c.scale(size/24,size/24);c.strokeStyle=col;c.lineWidth=lw||1.5;c.lineCap='round';c.lineJoin='round';c.stroke(p);c.restore();}
@@ -4620,7 +4620,7 @@ function shRR(c,x,y,w,h,r){c.beginPath();if(c.roundRect)c.roundRect(x,y,w,h,r);e
 
 /* the brand: logo in a white disc, name and contact; one strip used everywhere */
 function brLogo(c,x,y,r){const im=BRIMG;if(!im)return;const iw=im.width||1,ih=im.height||1,q=iw/ih,sq=q>.8&&q<1.25,k=sq?Math.max(2*r/iw,2*r/ih):Math.min(1.56*r/iw,1.56*r/ih);c.save();c.fillStyle='#ffffff';c.beginPath();c.arc(x,y,r,0,7);c.fill();c.clip();try{c.drawImage(im,x-iw*k/2,y-ih*k/2,iw*k,ih*k);}catch(e){}c.restore();c.save();c.strokeStyle='rgba(0,0,0,.1)';c.lineWidth=Math.max(1,r*.04);c.beginPath();c.arc(x,y,r,0,7);c.stroke();c.restore();}
-function brStrip(c,cx,cy,hh,ink,maxw,o){if(!brOn())return 0;o=o||{};const nm=brS('name'),ct=brContact()||brS('tag'),lg=BRIMG,r=hh*.5,gap=hh*.24,fn=FONT.clean;
+function brStrip(c,cx,cy,hh,ink,maxw,o){if(!brOn())return 0;o=o||{};const nm=o.nm||brS('name'),ct=o.ct||brContact()||brS('tag'),lg=BRIMG,r=hh*.5,gap=hh*.24,fn=FONT.clean;
  setF(c,hh*.44,fn,800);const wn=nm?c.measureText(nm).width:0;setF(c,hh*.27,fn,600);const wc=ct?c.measureText(ct).width:0,tw=Math.max(wn,wc),full=(lg?r*2+(tw?gap:0):0)+tw,pad=o.pill?hh*.9:0,k=Math.min(1,maxw/(full+pad)),d=RTL?-1:1,al=RTL?'right':'left';
  c.save();c.translate(cx,cy);c.scale(k,k);if(o.pill){const pw=full+pad,ph=hh*1.36;c.save();c.shadowColor='rgba(0,0,0,.25)';c.shadowBlur=hh*.3;c.shadowOffsetY=hh*.06;c.fillStyle=o.pill;rr(c,-pw/2,-ph/2,pw,ph,ph/2);c.fill();c.restore();}
  let x=-d*full/2;if(lg){brLogo(c,x+d*r,0,r);x+=d*(r*2+gap);}
@@ -4733,7 +4733,8 @@ const SHT={sale:[['sunburst',0,'s_burst','bold'],['pop',0,'s_hero','bold'],['mem
 {const a0=applyTpl;applyTpl=function(d){const nw=NEWP||P.occ!==d.occ;a0(d);if(nw&&SHOP.includes(d.occ))setTimeout(()=>{if(VIEW==='studio'&&isShop()&&!TOOL)openTool('text');},400);};}
 
 /* the shop's brand on every greeting too: it takes the place of the signature */
-{const p0=poster0;poster0=function(c,W,H,t){if(isShop()||!brOn())return p0(c,W,H,t);const f=P.from;P.from='';try{p0(c,W,H,t);}finally{P.from=f;}RTL=P.lang==='ar';const m=Math.min(W,H),lite=!!th().shc;brStrip(c,W/2,H*(H>W*1.5?.915:.95),m*.062,lite?'#1d1530':'#ffffff',W*.8,{pill:lite?'rgba(255,255,255,.94)':'rgba(18,12,30,.82)'});};}
+{const p0=poster0;poster0=function(c,W,H,t){if(isShop()||!brOn())return p0(c,W,H,t);const sg=sign(),f=P.from;P.from='';try{p0(c,W,H,t);}finally{P.from=f;}RTL=P.lang==='ar';const m=Math.min(W,H),T_=th(),lite=!!T_.shc,tall=H>W*1.5,ink=lite?'#1d1530':'#ffffff',pill=lite?'rgba(255,255,255,.94)':'rgba(18,12,30,.82)';
+ if(sg)brStrip(c,W/2,H*(tall?.915:.95),m*.066,ink,W*.84,{pill,nm:sg,ct:[brS('name'),brS('phone')&&ltr(brS('phone'))].filter(Boolean).join('   ·   ')});else brStrip(c,W/2,H*(tall?.915:.95),m*.062,ink,W*.8,{pill});};}
 
 /* video: the promo card, the photos, a kinetic price scene and a brand ending */
 function shRays(c,W,H,lt,A){const on=m2on(A);c.fillStyle=A;c.fillRect(-W*.2,-H*.2,W*1.4,H*1.4);c.save();c.translate(W/2,H*.45);c.rotate(lt*.1);c.fillStyle=on==='#ffffff'?'rgba(255,255,255,.075)':'rgba(0,0,0,.06)';const R=Math.hypot(W,H);for(let i=0;i<12;i++){c.beginPath();c.moveTo(0,0);c.arc(0,0,R,i*Math.PI/6,i*Math.PI/6+Math.PI/12);c.fill();}c.restore();return on;}
@@ -4746,7 +4747,7 @@ SC.deal=function(c,W,H,lt,sc,T_){const s=U(W,H),A=T_.shc?m2acc(T_):m2dark(T_),on
  I.push([s*11,y=>{const k=back((lt-2)/.5);if(k>0){c.save();c.translate(cx,y);c.scale(k*(1+.025*Math.sin(lt*5)),k*(1+.025*Math.sin(lt*5)));const dkf=m2lum(A)<.22;shBtn(c,0,0,s*4.6,shCta(),dkf?Y:DK,dkf?DK:'#ffffff',W*.8);c.restore();}}]);shStack(c,cx,H*.12,H*.88,I,s*3);};
 SC.brand=function(c,W,H,lt,sc,T_){const s=U(W,H),lite=!!T_.shc,D=m2dark(T_),cx=W/2,BG=lite?'#fffdf8':D,IK=lite?'#1d1530':'#ffffff',AC=lite?m2acc(T_):m2pal(T_)[0],r=s*16,ly=H*.3,f=FONT[T_.f]||FONT.clean,d=RTL?-1:1;
  c.fillStyle=BG;c.fillRect(-W*.2,-H*.2,W*1.4,H*1.4);c.fillStyle=hexA(shHex(AC),.14);c.beginPath();c.arc(W*.9,H*.08,s*26*M2.eo(lt/.8),0,7);c.fill();c.beginPath();c.arc(W*.08,H*.93,s*20*M2.eo((lt-.2)/.8),0,7);c.fill();
- m2ring(c,cx,ly,r*1.28,-1.57,-1.57+6.283*M2.eio(lt/1.1),hexA(shHex(AC),.9),s*.55);const k=back(lt/.6);if(k>0){c.save();c.translate(cx,ly);c.scale(k,k);if(BRIMG){c.shadowColor='rgba(0,0,0,.28)';c.shadowBlur=s*4;brLogo(c,0,0,r);}else{c.fillStyle=AC;c.beginPath();c.arc(0,0,r,0,7);c.fill();shIc(c,'store',0,0,r*1.1,shOn(AC),1.4);}c.restore();}
+ m2ring(c,cx,ly,r*1.28,-1.57,-1.57+6.283*M2.eio(lt/1.1),hexA(shHex(AC),.9),s*.55);const k=back(lt/.6);if(k>0){c.save();c.translate(cx,ly);c.scale(k,k);if(BRIMG){c.shadowColor='rgba(0,0,0,.28)';c.shadowBlur=s*4;brLogo(c,0,0,r);}else{c.fillStyle=AC;c.beginPath();c.arc(0,0,r,0,7);c.fill();shIc(c,'store',0,0,r*1.1,shOn(AC),1.4);}c.restore();}if(!isShop())text(c,L2(['Prepared with love by','أُعدّت بحب من']),cx,ly-r*1.28-s*7,{size:s*4,color:IK,w:700,a:ease((lt-.3)/.5)*.85,max:W*.8,sh:0,fx:0});
  let y=ly+r*1.28+s*11;const nm=brS('name')||names();m2rev(c,nm,cx,y,{size:s*10.5,fam:f,color:IK,max:W*.84},lt-.45);y+=s*9;if(brS('tag')){m2rev(c,brS('tag'),cx,y,{size:s*4.4,color:IK,w:600,max:W*.8,a:.85},lt-.75);y+=s*7;}
  const u=M2.eo((lt-.9)/.5);c.fillStyle=AC;c.fillRect(cx-s*9*u,y,s*18*u,s*.5);y+=s*8;
  [['phone',brS('phone')&&ltr(brS('phone'))],['chat',brS('handle')&&ltr(brS('handle'))],['pin',brS('addr')]].filter(q=>q[1]).forEach(([ik,tx],i)=>{const a=ease((lt-1.1-i*.2)/.4);if(a<=0){y+=s*9.5;return;}const z=s*5;setF(c,z,FONT.clean,700);const tw=Math.min(W*.7,c.measureText(tx).width),yy=y+(1-a)*s*4;c.save();c.globalAlpha=a;shIc(c,ik,cx-d*(tw/2+z*.95),yy,z*1.25,AC,1.9);c.restore();text(c,tx,cx+d*z*.55,yy,{size:z,fam:FONT.clean,color:IK,w:700,a,max:W*.7,sh:0,fx:0});y+=s*9.5;});
@@ -4802,6 +4803,29 @@ Object.assign(AR,{'For your shop':'لمتجرك','My shop':'متجري','Set up 
 'Logo added':'تمت إضافة الشعار','Add your shop name, logo and contact':'أضف اسم متجرك وشعارك ووسيلة التواصل','This picture could not be opened':'تعذّر فتح هذه الصورة','Items and prices':'الأصناف والأسعار','Item':'الصنف','Price':'السعر','Add an item':'أضف صنفاً','Product name':'اسم المنتج','What you offer (optional)':'ماذا تقدّم (اختياري)',
 'Old price':'السعر القديم','Offer badge':'شارة العرض','Offer ends':'ينتهي العرض','Button text':'نص الزر','New':'جديد','Post text':'نص المنشور','A post or a story, ready to upload':'منشور أو ستوري جاهز للرفع','A short promo with motion and music':'إعلان قصير بحركة وموسيقى','A caption with price, contact and hashtags':'نص مع السعر ووسيلة التواصل والوسوم',
 'Create the video':'أنشئ الفيديو','Your name, logo and contact are added to every design. Tap to change.':'يُضاف اسمك وشعارك ووسيلة التواصل إلى كل تصميم. اضغط للتعديل.','Add your logo and contact once. They appear on every post, story and video.':'أضف شعارك ووسيلة التواصل مرة واحدة، فتظهر على كل منشور وستوري وفيديو.'});
+
+/* ---------- work for clients: a shop makes greetings from photos of the order, signed by the client and credited to the shop ---------- */
+/* a thank-you post for a client, with the photo of what they bought */
+OCC.push({id:'thankc',e:'💝',n:['Thank a client','شكر للزبون'],f:'item',th:['ivory','rose','gala','mint','sunset','mono'],mu:'chill',h:['Thank you','شكراً لكم'],w:[["Thank you for choosing us. We hope it made your day sweeter 💛","It was a joy to prepare your order. See you again soon ✨","Your order, made with love. Thank you for your trust 🌸"],["شكراً لاختياركم لنا. نتمنى أن يكون طلبكم قد أسعد يومكم 💛","سعدنا بتحضير طلبكم. نراكم قريباً ✨","طلبكم محضّر بحب. شكراً لثقتكم 🌸"]]});
+SHOP.push('thankc');OCCIC.thankc='heart';OCCOL.thankc='#ff6b81';
+SHT.thankc=[['silk',0,'s_frame','elegant'],['watercolor',0,'s_tag',''],['bokeh',0,'s_side','modern'],['petals',0,'s_hero','elegant'],['boho',0,'s_frame','modern'],['breeze',0,'s_tag','elegant'],['aurora',0,'s_hero','modern'],['mesh',1,'s_side','modern']];
+{const tp=tpls;tpls=function(id){const L=tp(id);if(id==='thankc'){const k=P.lang==='ar'?1:0;L.forEach(d=>{d.name=['Sara','سارة'][k];});}return L;};}
+{const d0=PANEL.details;PANEL.details=()=>{if(P.occ!=='thankc')return d0();return[inp('name',T('Client name (optional)')),inp('cta',T('Button text'),{placeholder:shCta()}),brRow()];};}
+
+/* a watermark for the preview a shop sends before the client pays */
+let WMK=0;
+function wmDraw(c,W,H){const m=Math.min(W,H),z=m*.058,str=T('Preview')+'  ·  '+(brS('name')||'Zahwa');c.save();c.translate(W/2,H/2);c.rotate(-.5);setF(c,z,FONT.clean,800);c.textAlign='center';c.textBaseline='middle';c.direction=P.lang==='ar'?'rtl':'ltr';const tw=c.measureText(str).width+z*2.4,R=Math.hypot(W,H)/2+tw;c.lineWidth=z*.05;c.strokeStyle='rgba(0,0,0,.2)';c.fillStyle='rgba(255,255,255,.3)';
+ for(let y=-R,r=0;y<=R;y+=m*.2,r++)for(let x=-R+(r%2)*tw/2;x<=R;x+=tw){c.strokeText(str,x,y);c.fillText(str,x,y);}c.restore();}
+{const p1=poster;poster=function(c,W,H,t){p1(c,W,H,t);if(WMK)wmDraw(c,W,H);};}
+{const f1=frame;frame=function(c,W,H,t,S){f1(c,W,H,t,S);if(WMK)wmDraw(c,W,H);};}
+{const e0=exportSheet;exportSheet=function(k){e0(k);if(!brHas())return;const card=$('sheet').querySelector('.card'),h3=card&&card.querySelector('h3');if(!h3)return;
+ h3.after(h('div',{class:'row',style:'justify-content:flex-start'},h('button',{class:'chip'+(WMK?' on':''),onclick:()=>{WMK=WMK?0:1;DIRTY=1;exportSheet(k);}},(WMK?'✓ ':'')+T('Client preview with watermark'))),h('small',{},T(WMK?'The word Preview covers the design. Switch it off to make the final copy.':'Send a watermarked copy first, and the clean one after the client confirms.')));};}
+
+/* a way in from the home page, and the shop's line under a greeting's text */
+{const v0=vHome;vHome=function(app){v0(app);const b=app.querySelector('.shb');if(!b)return;b.after(h('button',{class:'mrow2 shb',onclick:occSheet},h('span',{class:'mi'},ic('gift')),h('span',{},h('b',{},T('Make a greeting for a client')),h('small',{},T('Pick the occasion, add their names and photos of the order. They sign it, and your shop is credited on it.'))),h('span',{class:'chev'},'›')));};}
+{const s0=shareMsg;shareMsg=function(){s0();if(isShop()||!brOn())return;const ta=$('f_share');if(!ta)return;const ct=[brS('phone'),brS('handle')].filter(Boolean).join(' · ');ta.value+='\n\n🎁 '+L2(['Prepared by ','من إعداد '])+(brS('name')||'')+(ct?'\n'+ct:'');};}
+Object.assign(AR,{'Client name (optional)':'اسم الزبون (اختياري)','Preview':'معاينة','Client preview with watermark':'معاينة للزبون بعلامة مائية','The word Preview covers the design. Switch it off to make the final copy.':'كلمة «معاينة» تغطي التصميم. أوقفها لإنشاء النسخة النهائية.',
+'Send a watermarked copy first, and the clean one after the client confirms.':'أرسل نسخة بعلامة مائية أولاً، ثم النسخة النظيفة بعد تأكيد الزبون.','Make a greeting for a client':'اصنع تهنئة لزبون','Pick the occasion, add their names and photos of the order. They sign it, and your shop is credited on it.':'اختر المناسبة وأضف الأسماء وصور الطلب. يوقّعها الزبون باسمه ويظهر متجرك عليها.'});
 
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
