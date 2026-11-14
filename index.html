@@ -4987,7 +4987,7 @@ function sMaking(c,W,H,t){const E=shE(c,W,H,t),{m,s,wide,tall,lite,A,D}=E,bo=brO
   c.save();c.shadowColor='rgba(0,0,0,.25)';c.shadowBlur=m*.02;c.fillStyle='#ffffff';rr(c,tx,ty,tw,th,m*.024);c.fill();c.restore();mkTile(c,E,q.id,tx,ty,tw,th,m*.024);c.fillStyle=CA;c.beginPath();c.arc(bx,by,br,0,7);c.fill();c.strokeStyle='#ffffff';c.lineWidth=br*.16;c.stroke();text(c,String(i+1),bx,by+br*.05,{size:br*1.1,fam:FONT.clean,color:shOn(CA),w:900,sh:0,fx:0});
   if(q.m)lines(c,q.m,tx+tw/2,ty+th+cap*.55,{size:Math.min(cap*.36,s*3.6),fam:FONT.clean,color:CI,w:700,max:tw*.96,ml:2,lh:1.2,sh:0,fx:0});});
  if(ct)ct[1](yb-h*.03-ct[0]/2);brPill(c,W,H,E);}
-LX.s_making=sMaking;Object.defineProperty(LNAME,'s_making',{value:['Making of','كواليس'],enumerable:false});
+LX.s_making=sMaking;Object.defineProperty(LNAME,'s_making',{value:['Photo grid','شبكة صور'],enumerable:false});
 
 /* the video: the card, then every stage as a full photo with its caption, then the shop */
 SC.stage=function(c,W,H,lt,sc,T_){const im=sc.id&&IMG[sc.id];if(!im)return SC.step(c,W,H,lt,sc,T_);const s=U(W,H),cx=W/2,Y='#ffd23f',k=back((lt-.15)/.5),n=sc.n||1,bw=W*.86,gp=W*.012,sw=(bw-gp*(n-1))/n;
@@ -5062,6 +5062,52 @@ Object.keys(ARTS).forEach(k=>{const A=ARTS[k];if(!A||!Array.isArray(A.pals)||A.n
 {const tp=tpls;tpls=function(id){const L=tp(id);L.forEach(d=>{const A=d.art&&ARTS[d.art];if(A&&A.n0)d.pal=(d.pal||0)%A.n0;});return L;};}
 function palRow(){const A=ARTS[P.art];if(!A)return null;const cur=(P.pal||0)%A.pals.length;return h('div',{class:'row scroll pls'},A.pals.map((p,i)=>h('button',{class:'pl'+(cur===i?' on':''),'aria-label':T('Colours')+' '+(i+1),onclick:()=>{P.pal=i;ch();}},h('span',{style:`background:linear-gradient(135deg,${p.g[1]} 50%,${p.acc} 50%)`}))));}
 document.head.append(h('style',{},'.pls{gap:6px;padding:2px 0 6px}.pl{flex:none;width:46px;height:46px;border-radius:50%;padding:4px;background:none;border:2px solid transparent}.pl.on{border-color:#ff5c8a}.pl span{display:block;width:100%;height:100%;border-radius:50%;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset}'));
+
+/* ---------- making of, in designs that differ in structure and graphics: film strip, winding path, polaroids, big result with small stages ---------- */
+const mkPic=(c,E,id,path,x,y,w,h)=>{const im=id&&IMG[id];c.save();path();c.clip();if(im)cover(c,im,x,y,w,h);else{const g=c.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,E.pal[0]);g.addColorStop(1,E.pal[1%E.pal.length]);c.fillStyle=g;c.fillRect(x,y,w,h);shIc(c,shKind(),x+w/2,y+h/2,Math.min(w,h)*.42,'rgba(255,255,255,.9)',1.3);}c.restore();},
+ mkSh=(c,path,m,col)=>{c.save();c.shadowColor='rgba(0,0,0,.28)';c.shadowBlur=m*.03;c.shadowOffsetY=m*.008;c.fillStyle=col||'#ffffff';path();c.fill();c.restore();},
+ mkNum=(c,x,y,r,i,CA)=>{c.save();c.shadowColor='rgba(0,0,0,.25)';c.shadowBlur=r*.5;c.fillStyle=CA;c.beginPath();c.arc(x,y,r,0,7);c.fill();c.restore();c.strokeStyle='#ffffff';c.lineWidth=r*.16;c.beginPath();c.arc(x,y,r,0,7);c.stroke();text(c,String(i+1),x,y+r*.05,{size:r*1.1,fam:FONT.clean,color:shOn(CA),w:900,sh:0,fx:0});};
+/* the frame every design shares: headline, optional name, the space for the stages, the button and the shop tag */
+function mkBase(c,W,H,t){const E=shE(c,W,H,t),{m,s,wide,tall}=E,CI=E.ink,CA=E.lite?E.A:E.pal[0],cx=W/2,yb=brOn()?E.fy-m*.085:H*(tall?.93:.955),I=shI(c,E,cx,W*.84,{ink:CI,acc:CA,bbg:CA,bfg:shOn(CA)});let yy=H*(tall?.065:.04);const hh=I.head(wide?6.5:8.4);if(hh){hh[1](yy+hh[0]/2);yy+=hh[0];}
+ if(E.nm){yy+=s*4;text(c,E.nm,cx,yy,{size:s*4.6,fam:FONT.clean,color:CA,w:800,max:W*.82,sh:0,fx:0});yy+=s*3;}const ct=I.cta();return{E,m,s,wide,tall,CI,CA,cx,d:RTL?-1:1,g0:yy+s*4,g1:yb-(ct?ct[0]+s*4:s*2),end:()=>{if(ct)ct[1](yb-ct[0]/2);brPill(c,W,H,E);}};}
+const mkCap=(c,q,x,y,o)=>{if(q.m)lines(c,q.m,x,y,Object.assign({fam:FONT.clean,w:700,ml:2,lh:1.22,sh:0,fx:0},o));};
+
+/* a strip of film: the photos are its frames, big numbers and captions run beside it */
+function sMkFilm(c,W,H,t){const B=mkBase(c,W,H,t),{E,m,s,wide,tall,CI,CA,cx,d,g0,g1}=B,ST=mkStages().slice(0,wide?4:tall?5:4),n=ST.length,FK='#17131f',hole=(x,y,w,h)=>{c.fillStyle='rgba(255,255,255,.85)';rr(c,x,y,w,h,Math.min(w,h)*.25);c.fill();};
+ if(wide){const sw=W*.9,x0=cx-sw/2,sh=Math.min((g1-g0)*.66,sw/n*.86),pad=sh*.14,fw=(sw-pad*(n+1))/n,fh=sh-pad*2.4,hw=sh*.05;mkSh(c,()=>rr(c,x0,g0,sw,sh,m*.012),m,FK);for(let x=x0+hw;x<x0+sw-hw;x+=hw*2.2){hole(x,g0+pad*.3,hw,pad*.55);hole(x,g0+sh-pad*.85,hw,pad*.55);}
+  ST.forEach((q,i)=>{const k=RTL?n-1-i:i,fx=x0+pad+k*(fw+pad),fy=g0+pad*1.2;mkPic(c,E,q.id,()=>rr(c,fx,fy,fw,fh,m*.01),fx,fy,fw,fh);const ty=g0+sh+(g1-g0-sh)*.5;text(c,String(i+1),fx+fw/2,ty-s*3.4,{size:s*6.5,fam:FONT.clean,color:CA,w:900,sh:0,fx:0});mkCap(c,q,fx+fw/2,ty+s*3.6,{size:s*3.3,color:CI,max:fw*1.05});});B.end();return;}
+ const sw=W*.44,sx=d>0?W*.07:W*.93-sw,pad=Math.min(sw*.1,(g1-g0)*.035),fh=((g1-g0)-pad*(n+1))/n,fw=sw*.74,fx=sx+(sw-fw)/2,hw=sw*.055,tx=d>0?sx+sw+W*.045:sx-W*.045,tm=W*.93-sw-W*.115,al=d>0?'left':'right';
+ mkSh(c,()=>rr(c,sx,g0,sw,g1-g0,m*.012),m,FK);for(let y=g0+hw;y<g1-hw*1.4;y+=hw*2.1){hole(sx+sw*.035,y,hw,hw*.8);hole(sx+sw-sw*.035-hw,y,hw,hw*.8);}
+ ST.forEach((q,i)=>{const fy=g0+pad+i*(fh+pad),cy=fy+fh/2,z=Math.min(fh*.34,s*11);mkPic(c,E,q.id,()=>rr(c,fx,fy,fw,fh,m*.01),fx,fy,fw,fh);text(c,String(i+1).padStart(2,'0'),tx,cy-(q.m?z*.42:0),{size:z,fam:FONT.clean,color:CA,w:900,al,sh:0,fx:0});
+  if(q.m){c.fillStyle=hexA(shHex(CA),.5);c.fillRect(d>0?tx:tx-s*7,cy+z*.2,s*7,s*.45);mkCap(c,q,tx,cy+z*.2+Math.min(fh*.2,s*5.2),{size:Math.min(fh*.13,s*4.2),color:CI,al,max:tm});}});B.end();}
+
+/* a winding dotted path: each stage is a round photo on alternating sides (for "how to order": numbered discs) */
+function sMkPath(c,W,H,t){const B=mkBase(c,W,H,t),{E,m,s,wide,tall,CI,CA,cx,d,g0,g1}=B,pics=P.occ==='making',ST=mkStages().slice(0,wide?5:tall?6:4),n=ST.length,P2=[];
+ if(wide){const r=Math.min((g1-g0)*.26,W*.84/n*.36);ST.forEach((q,i)=>{const k=RTL?n-1-i:i;P2.push([W*.08+W*.84*(k+.5)/n,g0+r*1.15+(i%2?r*.5:0)]);});}
+ else{const rh=(g1-g0)/n,r=Math.min(rh*.43,W*.165);ST.forEach((q,i)=>P2.push([cx+(i%2?1:-1)*d*W*.23,g0+rh*(i+.5)]));P2.r=r;}
+ const r=P2.r||Math.min((g1-g0)*.26,W*.84/n*.36);c.save();c.strokeStyle=hexA(shHex(CA),.7);c.lineWidth=m*.007;c.lineCap='round';c.setLineDash([.01,m*.022]);c.beginPath();P2.forEach((p,i)=>{if(!i)c.moveTo(p[0],p[1]);else{const a=P2[i-1];if(wide)c.bezierCurveTo((a[0]+p[0])/2,a[1],(a[0]+p[0])/2,p[1],p[0],p[1]);else c.bezierCurveTo(a[0],(a[1]+p[1])/2,p[0],(a[1]+p[1])/2,p[0],p[1]);}});c.stroke();c.restore();
+ ST.forEach((q,i)=>{const [x,y]=P2[i];mkSh(c,()=>{c.beginPath();c.arc(x,y,r*1.09,0,7);},m);if(pics){mkPic(c,E,q.id,()=>{c.beginPath();c.arc(x,y,r,0,7);},x-r,y-r,r*2,r*2);mkNum(c,x-d*r*.74,y-r*.74,r*.3,i,CA);}else{c.fillStyle=CA;c.beginPath();c.arc(x,y,r,0,7);c.fill();text(c,String(i+1),x,y+r*.05,{size:r*1.15,fam:FONT.clean,color:shOn(CA),w:900,sh:0,fx:0});}
+  if(wide)mkCap(c,q,x,Math.min(g1-s*4,y+r*1.09+s*6),{size:s*3.4,color:CI,max:W*.84/n*.95});else mkCap(c,q,cx-(i%2?1:-1)*d*W*.2,y,{size:Math.min(r*.3,s*4.8),color:CI,max:W*.42,ml:3});});B.end();}
+
+/* tilted polaroids with tape, the caption written under each photo */
+function sMkPola(c,W,H,t){const B=mkBase(c,W,H,t),{E,m,s,wide,tall,CA,cx,g0,g1}=B,ST=mkStages().slice(0,tall?6:4),n=ST.length,cols=wide?n:(n<=1?1:2),rows=Math.ceil(n/cols),gw=W*.9,cw=gw/cols,chh=(g1-g0)/rows;
+ ST.forEach((q,i)=>{const r=Math.floor(i/cols),inRow=r===rows-1?n-r*cols:cols,k=i-r*cols,kk=RTL?inRow-1-k:k,px=cx-inRow*cw/2+(kk+.5)*cw,py=g0+(r+.5)*chh,pw=Math.min(cw*.9,chh*.86),ph=Math.min(chh*.92,pw*1.22),pm=pw*.06,cap=ph*.2,rot=((i%2?1:-1)*.045+(i%3-1)*.012);
+  c.save();c.translate(px,py);c.rotate(rot);mkSh(c,()=>rr(c,-pw/2,-ph/2,pw,ph,pw*.015),m,'#fffdf8');mkPic(c,E,q.id,()=>c.beginPath()||c.rect(-pw/2+pm,-ph/2+pm,pw-pm*2,ph-pm-cap),-pw/2+pm,-ph/2+pm,pw-pm*2,ph-pm-cap);
+  if(q.m)lines(c,q.m,0,ph/2-cap*.52,{size:Math.min(cap*.36,s*4.4),fam:brF(q.m,E.f),color:'#2a1c3a',max:pw*.86,ml:2,lh:1.15,sh:0,fx:0});
+  c.save();c.translate(0,-ph/2);c.rotate(-rot*2.2);c.fillStyle=hexA(shHex(CA),.55);c.fillRect(-pw*.16,-pw*.045,pw*.32,pw*.09);c.restore();mkNum(c,(RTL?1:-1)*(pw/2-pw*.02),-ph/2+pw*.1,Math.min(pw*.085,s*4.2),i,CA);c.restore();});B.end();}
+
+/* the finished piece large, the stages that led to it small underneath */
+function sMkHero(c,W,H,t){const B=mkBase(c,W,H,t),{E,m,s,wide,tall,CI,CA,cx,d,g0,g1}=B,ST=mkStages().slice(0,5),n=ST.length,last=ST[n-1],pre=ST.slice(0,n-1),rad=m*.035;
+ const hero=(x,y,w,h)=>{mkSh(c,()=>rr(c,x-m*.012,y-m*.012,w+m*.024,h+m*.024,rad+m*.012),m);mkPic(c,E,last.id,()=>rr(c,x,y,w,h,rad),x,y,w,h);mkNum(c,d>0?x+m*.06:x+w-m*.06,y+m*.06,m*.04,n-1,CA);if(last.m){const z=Math.min(s*4.6,h*.07);setF(c,z,FONT.clean,800);const tw=Math.min(w*.86,c.measureText(last.m).width+z*2.2),py=y+h-z*1.9;c.fillStyle=CA;rr(c,x+w/2-tw/2,py-z*1.05,tw,z*2.1,z*1.05);c.fill();text(c,last.m,x+w/2,py+z*.04,{size:z,fam:FONT.clean,color:shOn(CA),w:800,max:tw-z*1.3,sh:0,fx:0});}},
+  thumbs=(x,y,w,h)=>{const k=pre.length;if(!k)return;const gap=w*.035,tw=Math.min((w-gap*(k-1))/k,h*.62),tot=k*tw+(k-1)*gap,x0=x+(w-tot)/2,ty=y+(h-tw-Math.min(h*.3,s*9))/2;pre.forEach((q,i)=>{const kk=RTL?k-1-i:i,tx=x0+kk*(tw+gap);mkSh(c,()=>rr(c,tx,ty,tw,tw,tw*.14),m);mkPic(c,E,q.id,()=>rr(c,tx,ty,tw,tw,tw*.14),tx,ty,tw,tw);mkNum(c,d>0?tx+tw*.16:tx+tw-tw*.16,ty+tw*.16,Math.min(tw*.15,s*3.4),i,CA);mkCap(c,q,tx+tw/2,ty+tw+Math.min(h*.16,s*5),{size:Math.min(tw*.13,s*3.5),color:CI,max:tw*1.04});
+    if(i<k-1){const ax=d>0?tx+tw+gap/2:tx-gap/2,ay=ty+tw/2,a=gap*.22;c.strokeStyle=CA;c.lineWidth=m*.005;c.lineCap='round';c.beginPath();c.moveTo(ax-d*a,ay-a*1.4);c.lineTo(ax+d*a,ay);c.lineTo(ax-d*a,ay+a*1.4);c.stroke();}});};
+ if(wide){const hw=W*.4,hx=d>0?W*.06:W*.94-hw;hero(hx,g0,hw,g1-g0);thumbs(d>0?hx+hw+W*.03:W*.06,g0,W*.88-hw-W*.03,g1-g0);}else{const hh=(g1-g0)*(pre.length?(tall?.6:.56):1);hero(W*.08,g0,W*.84,hh);thumbs(W*.06,g0+hh+s*2,W*.88,g1-g0-hh-s*2);}B.end();}
+
+Object.assign(LX,{s_mk_film:sMkFilm,s_mk_path:sMkPath,s_mk_pola:sMkPola,s_mk_hero:sMkHero});
+[['s_mk_film',['Film strip','شريط فيلم']],['s_mk_path',['Winding path','مسار متعرّج']],['s_mk_pola',['Polaroids','صور فورية']],['s_mk_hero',['Big result','النتيجة الكبيرة']]].forEach(([k,v])=>Object.defineProperty(LNAME,k,{value:v,enumerable:false,configurable:true}));
+SHT.making=[['silk',0,'s_mk_film','elegant'],['boho',0,'s_mk_pola','modern'],['bokeh',0,'s_mk_hero','modern'],['watercolor',0,'s_mk_path',''],['marble',0,'s_making','elegant'],['terrazzo',0,'s_mk_pola','clean'],['aurora',0,'s_mk_film','modern'],['petals',0,'s_mk_hero','elegant'],['mesh',1,'s_mk_path','modern'],['breeze',0,'s_making','elegant']];
+/* how to order: half of the ready designs use the winding path instead of the card */
+if(SHT.steps)SHT.steps=SHT.steps.map((d,i)=>i%2?[d[0],d[1],'s_mk_path',d[3]]:d);
 
 /* ---------- choosing an option keeps the list where it was: the panel, its sideways rows and the page do not jump back to the start ---------- */
 let KSD=0;
