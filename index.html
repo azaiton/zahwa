@@ -1034,7 +1034,7 @@ const FILMOK=['entrance','story','photos','wishes','wall','song','moment','final
 async function makeFilm(){closeSheet();const cv=$('stage'),mime=window.MediaRecorder&&cv.captureStream&&['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));
  if(!mime){toast(T('This browser cannot create video here. Use screen recording instead.'));return;}const F=Show.film={ch:[],mime,w:0,c:0};$('stageWrap').classList.add('film');$('fmsg').textContent=T('Recording the party film… keep this screen open');
  await startParty();cv.width=1280;cv.height=720;const st=capStream(cv);if(AC){if(!RD){RD=AC.createMediaStreamDestination();(OUT||MG).connect(RD);}RD.stream.getAudioTracks().forEach(tr=>st.addTrack(tr));}
- try{F.mr=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:8e6});F.mr.ondataavailable=e=>e.data.size&&F.ch.push(e.data);F.mr.start();}catch(e){endParty();toast(T('This browser cannot create video here. Use screen recording instead.'));}}
+ try{F.mr=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:5e6});F.mr.ondataavailable=e=>e.data.size&&F.ch.push(e.data);F.mr.start();}catch(e){endParty();toast(T('This browser cannot create video here. Use screen recording instead.'));}}
 function filmDrive(){const F=Show.film,now=performance.now();if(!F||!F.mr||Show.tr)return;
  if(Show.idle){if(!F.w)F.w=now;if(now-F.w>(Show.next?1800:3000)){F.w=0;if(Show.next<Show.parts.length)pStart(Show.next);else{Show.film=null;F.mr.onstop=()=>{endParty();result(new Blob(F.ch,{type:F.mime.split(';')[0]}),F.mime.includes('mp4')?'mp4':'webm');};F.mr.stop();}}return;}
  const id=Show.parts[Show.i],step=id==='wishes'||id==='story',lim=id==='thanks'?7:step?5:id==='wall'?10:id==='song'?18:40;if(!F.c||F.c>Show.pt)F.c=Show.pt||.001;
@@ -2299,7 +2299,7 @@ const vxMsgs=()=>P.guests.filter(g=>g.m&&g.m.trim()&&!(g.med&&MED[g.med]));
 const vxVids=()=>P.guests.filter(g=>g.med&&MED[g.med]);
 const msgDur=m=>Math.min(9,3.5+m.length*.05);
 const VDUR={};
-function mediaDur(id,kind){if(VDUR[id])return Promise.resolve(VDUR[id]);return new Promise(r=>{const el=document.createElement(kind==='audio'?'audio':'video');el.preload='metadata';el.muted=true;const done=d=>{clearTimeout(tm);r(VDUR[id]=d);};const tm=setTimeout(()=>done(20),5000);
+function mediaDur(id,kind){if(VDUR[id])return Promise.resolve(VDUR[id]);return new Promise(r=>{const el=document.createElement(kind==='audio'?'audio':'video');el.preload='metadata';el.muted=true;let fin=0;const done=d=>{if(fin)return;fin=1;clearTimeout(tm);try{el.removeAttribute('src');el.load();}catch(e){}r(VDUR[id]=d);};const tm=setTimeout(()=>done(20),5000);
  el.onloadedmetadata=()=>{if(isFinite(el.duration)&&el.duration>0)done(el.duration);else{el.currentTime=1e6;el.ondurationchange=()=>{if(isFinite(el.duration)&&el.duration>0)done(el.duration);};}};el.onerror=()=>done(0);el.src=MED[id];});}
 
 /* scenes: a written message with its sender, and a video or voice message that plays inside the video */
@@ -2333,10 +2333,10 @@ makeVideo=async function(){if(BUSY)return;await fontsReady();const S=await vxPla
  const mime=window.MediaRecorder&&cv.captureStream&&['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
  if(!mime){toast(T('This browser cannot create video here. Use screen recording instead.'));return;}
  stopMusic();ac();const st=capStream(cv);if(AC){if(!RD){RD=AC.createMediaStreamDestination();(OUT||MG).connect(RD);}RD.stream.getAudioTracks().forEach(tr=>st.addTrack(tr));}
- let mr;try{mr=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:6e6*kq*kq});}catch(e){toast(T('This browser cannot create video here. Use screen recording instead.'));return;}
+ let mr;try{mr=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:4e6*kq*kq});}catch(e){toast(T('This browser cannot create video here. Use screen recording instead.'));return;}
  const chunks=[];mr.ondataavailable=e=>e.data.size&&chunks.push(e.data);const done=new Promise(r=>mr.onstop=r);let stop=0;const pb=h('i',{}),lab=h('small',{},'0:00 / '+vxT(S.T));
  sheet(h('h3',{},T('Creating your video…')),cv,h('div',{class:'prog'},pb),lab,h('small',{},T('Keep this screen open until it finishes.')),h('button',{class:'ghost',onclick:()=>{stop=1;}},T('Cancel')));
- BUSY=1;const draw=t=>{try{frame(c,W,H,t,S);}catch(e){}if(cv._rf)cv._rf();};draw(0);
+ BUSY=1;let lastD=0;const draw=(t,force)=>{const n=performance.now();if(!force&&n-lastD<31)return;lastD=n;try{frame(c,W,H,t,S);}catch(e){}if(cv._rf)cv._rf();};draw(0,1);
  const loopSong=cu&&S.sd>0&&(vxo().len!=='song'||S.note==='long');
  const songOn=()=>{if(!sg||sg==='none')return;if(cu){if(musEl&&curMus===sg){musEl.play().catch(()=>{});}else{playTune(sg);if(musEl){musEl.loop=loopSong;if(!loopSong)musEl.onended=null;}}}else playTune(sg);};
  const songOff=()=>{if(cu&&musEl)musEl.pause();else stopMusic();};
@@ -2369,19 +2369,22 @@ document.addEventListener('visibilitychange',()=>{if(!VXEL)return;if(document.vi
 Object.assign(AR,{'What to include':'ماذا يتضمن الفيديو','Opening':'الافتتاحية','Card':'البطاقة','Photos':'الصور','Written messages':'الرسائل المكتوبة','Video messages':'رسائل الفيديو','Ending card':'بطاقة الختام','Song':'الأغنية','Length':'المدة','Until the song ends':'حتى تنتهي الأغنية','Just the content':'المحتوى فقط','Video length':'مدة الفيديو','video messages':'رسائل فيديو','Quality':'الجودة',
  'The song is longer than what you chose, so it fades out at the end. Add photos or messages to fill it.':'الأغنية أطول مما اخترت، لذا تخفت في النهاية. أضف صوراً أو رسائل لتملأها.','What you chose is longer than the song, so the song starts again.':'ما اخترته أطول من الأغنية، لذا تبدأ الأغنية من جديد.'});
 /* iPad Safari can stop taking frames from a canvas on its own: the app hands every drawn frame to the recorder itself */
-function capStream(cv){try{const st=cv.captureStream(0),tr=st.getVideoTracks()[0];if(tr&&typeof tr.requestFrame==='function'){cv._rf=()=>{try{tr.requestFrame();}catch(e){}};return st;}st.getTracks().forEach(t=>t.stop());}catch(e){}cv._rf=null;return cv.captureStream(30);}
+function capStream(cv){try{const st=cv.captureStream(0),tr=st.getVideoTracks()[0];if(tr&&typeof tr.requestFrame==='function'){let lf=0;cv._rf=()=>{const n=performance.now();if(n-lf<31)return;lf=n;try{tr.requestFrame();}catch(e){}};return st;}st.getTracks().forEach(t=>t.stop());}catch(e){}cv._rf=null;return cv.captureStream(30);}
 {const pu=pump;pump=function(){pu();if(Show.film&&Show.cv&&Show.cv._rf)Show.cv._rf();};}
 /* iPad Safari plays a video with sound only if that same element was started by a tap: unlock every video and voice message during the tap on "Create", then reuse those elements */
 const VXPOOL={};
 function vxUnlock(){try{ac();if(AC&&AC.state!=='running')AC.resume();}catch(e){}
- for(const g of P.guests){if(!g.med||!MED[g.med]||VXPOOL[g.med])continue;const el=document.createElement(g.kind==='audio'?'audio':'video');el.preload='metadata';el.playsInline=true;el.setAttribute('playsinline','');el.setAttribute('webkit-playsinline','');el.src=MED[g.med];
-  if(el.tagName==='VIDEO')el.style.cssText='width:100%;height:100%';if(el.tagName==='VIDEO')MHOLD.append(el);boost(el);el.addEventListener('ended',()=>{el._done=1;});el.addEventListener('error',()=>{el._done=1;});
+ for(const g of P.guests){if(!g.med||!MED[g.med]||VXPOOL[g.med])continue;const el=document.createElement(g.kind==='audio'?'audio':'video');el.preload='none';el._id=g.med;el.playsInline=true;el.setAttribute('playsinline','');el.setAttribute('webkit-playsinline','');el.src=MED[g.med];
+  if(el.tagName==='VIDEO')el.style.cssText='width:100%;height:100%';if(el.tagName==='VIDEO')MHOLD.append(el);vxBoost(el);el.addEventListener('ended',()=>{el._done=1;});el.addEventListener('error',()=>{el._done=1;});
   try{const p=el.play();el.pause();if(p&&p.catch)p.catch(()=>{});}catch(e){}if(el.parentNode)el.remove();VXPOOL[g.med]=el;}}
-{const pm=playMedia;playMedia=function(id,kind,onend){const el=VXPOOL[id];if(!el||kind==='image')return pm(id,kind,onend);el._done=0;el.onended=onend;el.muted=false;try{el.currentTime=0;}catch(e){}if(el.tagName==='VIDEO'){[...MHOLD.children].forEach(x=>{if(x!==el){if(x.pause)x.pause();x.remove();}});if(el.parentNode!==MHOLD)MHOLD.append(el);}el.play().catch(()=>{});return el;};}
-{const sm=stopMedia;stopMedia=function(el){if(el&&Object.values(VXPOOL).includes(el)){clearTimeout(el._t);el.pause();if(el.parentNode)el.remove();return;}sm(el);};}
+{const pm=playMedia;playMedia=function(id,kind,onend){const el=VXPOOL[id];if(!el||kind==='image')return pm(id,kind,onend);el._done=0;el._used=1;el.onended=onend;el.muted=false;try{el.currentTime=0;}catch(e){}if(el.tagName==='VIDEO'){[...MHOLD.children].forEach(x=>{if(x!==el){if(x.pause)x.pause();x.remove();}});if(el.parentNode!==MHOLD)MHOLD.append(el);}el.play().catch(()=>{});return el;};}
+{const sm=stopMedia;stopMedia=function(el){if(el&&Object.values(VXPOOL).includes(el)){clearTimeout(el._t);el.pause();if(el.parentNode)el.remove();if(el._used)vxFree(el);return;}sm(el);};}
 {const mv=makeVideo;makeVideo=function(){vxUnlock();return mv();};const mf=makeFilm;makeFilm=function(){vxUnlock();return mf();};}
 MHOLD.style.cssText='position:fixed;left:0;top:0;width:120px;height:120px;opacity:.01;overflow:hidden;pointer-events:none;z-index:-1';
 Object.assign(AR,{'Choose the video messages':'اختر رسائل الفيديو','Choose the written messages':'اختر الرسائل المكتوبة','All':'الكل','None':'لا شيء','Message':'رسالة'});
+/* each video message is released completely once it has played, so a long export never runs out of memory */
+function vxBoost(el){try{if(!ac()||el._b)return;el._b=1;const s=AC.createMediaElementSource(el),g=AC.createGain(),k=AC.createDynamicsCompressor();g.gain.value=2.5;s.connect(g);g.connect(k);k.connect(MG);el._nodes=[s,g,k];}catch(e){}}
+function vxFree(el){try{el.pause();el.onended=null;(el._nodes||[]).forEach(n=>{try{n.disconnect();}catch(e){}});el._nodes=null;el.removeAttribute('src');el.load();}catch(e){}if(el._id&&VXPOOL[el._id]===el)delete VXPOOL[el._id];}
 
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
