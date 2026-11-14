@@ -2364,6 +2364,15 @@ Object.assign(AR,{'What to include':'ماذا يتضمن الفيديو','Openin
 /* iPad Safari can stop taking frames from a canvas on its own: the app hands every drawn frame to the recorder itself */
 function capStream(cv){try{const st=cv.captureStream(0),tr=st.getVideoTracks()[0];if(tr&&typeof tr.requestFrame==='function'){cv._rf=()=>{try{tr.requestFrame();}catch(e){}};return st;}st.getTracks().forEach(t=>t.stop());}catch(e){}cv._rf=null;return cv.captureStream(30);}
 {const pu=pump;pump=function(){pu();if(Show.film&&Show.cv&&Show.cv._rf)Show.cv._rf();};}
+/* iPad Safari plays a video with sound only if that same element was started by a tap: unlock every video and voice message during the tap on "Create", then reuse those elements */
+const VXPOOL={};
+function vxUnlock(){try{ac();if(AC&&AC.state!=='running')AC.resume();}catch(e){}
+ for(const g of P.guests){if(!g.med||!MED[g.med]||VXPOOL[g.med])continue;const el=document.createElement(g.kind==='audio'?'audio':'video');el.preload='metadata';el.playsInline=true;el.setAttribute('playsinline','');el.setAttribute('webkit-playsinline','');el.src=MED[g.med];
+  if(el.tagName==='VIDEO'){el.style.cssText='width:2px;height:2px';MHOLD.append(el);}boost(el);el.addEventListener('ended',()=>{el._done=1;});el.addEventListener('error',()=>{el._done=1;});
+  try{const p=el.play();el.pause();if(p&&p.catch)p.catch(()=>{});}catch(e){}VXPOOL[g.med]=el;}}
+{const pm=playMedia;playMedia=function(id,kind,onend){const el=VXPOOL[id];if(!el||kind==='image')return pm(id,kind,onend);el._done=0;el.onended=onend;el.muted=false;try{el.currentTime=0;}catch(e){}if(el.tagName==='VIDEO'&&el.parentNode!==MHOLD)MHOLD.append(el);el.play().catch(()=>{});return el;};}
+{const sm=stopMedia;stopMedia=function(el){if(el&&Object.values(VXPOOL).includes(el)){clearTimeout(el._t);el.pause();return;}sm(el);};}
+{const mv=makeVideo;makeVideo=function(){vxUnlock();return mv();};const mf=makeFilm;makeFilm=function(){vxUnlock();return mf();};}
 
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
