@@ -1033,7 +1033,7 @@ function exportSheet(k){const o=(key,opts)=>h('div',{class:'seg',style:'align-se
 const FILMOK=['entrance','story','photos','wishes','wall','song','moment','finale','credits','thanks'];
 async function makeFilm(){closeSheet();const cv=$('stage'),mime=window.MediaRecorder&&cv.captureStream&&['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));
  if(!mime){toast(T('This browser cannot create video here. Use screen recording instead.'));return;}const F=Show.film={ch:[],mime,w:0,c:0};$('stageWrap').classList.add('film');$('fmsg').textContent=T('Recording the party film… keep this screen open');
- await startParty();cv.width=1280;cv.height=720;const st=cv.captureStream(30);if(AC){if(!RD){RD=AC.createMediaStreamDestination();(OUT||MG).connect(RD);}RD.stream.getAudioTracks().forEach(tr=>st.addTrack(tr));}
+ await startParty();cv.width=1280;cv.height=720;const st=capStream(cv);if(AC){if(!RD){RD=AC.createMediaStreamDestination();(OUT||MG).connect(RD);}RD.stream.getAudioTracks().forEach(tr=>st.addTrack(tr));}
  try{F.mr=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:8e6});F.mr.ondataavailable=e=>e.data.size&&F.ch.push(e.data);F.mr.start();}catch(e){endParty();toast(T('This browser cannot create video here. Use screen recording instead.'));}}
 function filmDrive(){const F=Show.film,now=performance.now();if(!F||!F.mr||Show.tr)return;
  if(Show.idle){if(!F.w)F.w=now;if(now-F.w>(Show.next?1800:3000)){F.w=0;if(Show.next<Show.parts.length)pStart(Show.next);else{Show.film=null;F.mr.onstop=()=>{endParty();result(new Blob(F.ch,{type:F.mime.split(';')[0]}),F.mime.includes('mp4')?'mp4':'webm');};F.mr.stop();}}return;}
@@ -2325,11 +2325,11 @@ makeVideo=async function(){if(BUSY)return;await fontsReady();const S=await vxPla
  const kq=P.vq==='fhd'?1.5:1,W=FMT[P.fmt].v[0]*kq,H=FMT[P.fmt].v[1]*kq,cv=h('canvas',{width:W,height:H}),c=cv.getContext('2d');
  const mime=window.MediaRecorder&&cv.captureStream&&['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
  if(!mime){toast(T('This browser cannot create video here. Use screen recording instead.'));return;}
- stopMusic();ac();const st=cv.captureStream(30);if(AC){if(!RD){RD=AC.createMediaStreamDestination();(OUT||MG).connect(RD);}RD.stream.getAudioTracks().forEach(tr=>st.addTrack(tr));}
+ stopMusic();ac();const st=capStream(cv);if(AC){if(!RD){RD=AC.createMediaStreamDestination();(OUT||MG).connect(RD);}RD.stream.getAudioTracks().forEach(tr=>st.addTrack(tr));}
  let mr;try{mr=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:6e6*kq*kq});}catch(e){toast(T('This browser cannot create video here. Use screen recording instead.'));return;}
  const chunks=[];mr.ondataavailable=e=>e.data.size&&chunks.push(e.data);const done=new Promise(r=>mr.onstop=r);let stop=0;const pb=h('i',{}),lab=h('small',{},'0:00 / '+vxT(S.T));
  sheet(h('h3',{},T('Creating your video…')),cv,h('div',{class:'prog'},pb),lab,h('small',{},T('Keep this screen open until it finishes.')),h('button',{class:'ghost',onclick:()=>{stop=1;}},T('Cancel')));
- BUSY=1;const draw=t=>{try{frame(c,W,H,t,S);}catch(e){}};draw(0);
+ BUSY=1;const draw=t=>{try{frame(c,W,H,t,S);}catch(e){}if(cv._rf)cv._rf();};draw(0);
  const loopSong=cu&&S.sd>0&&(vxo().len!=='song'||S.note==='long');
  const songOn=()=>{if(!sg||sg==='none')return;if(cu){if(musEl&&curMus===sg){musEl.play().catch(()=>{});}else{playTune(sg);if(musEl){musEl.loop=loopSong;if(!loopSong)musEl.onended=null;}}}else playTune(sg);};
  const songOff=()=>{if(cu&&musEl)musEl.pause();else stopMusic();};
@@ -2361,6 +2361,9 @@ document.addEventListener('visibilitychange',()=>{if(!VXEL)return;if(document.vi
   if(S.note==='long')est.after(h('small',{},T('What you chose is longer than the song, so the song starts again.')));});};}
 Object.assign(AR,{'What to include':'ماذا يتضمن الفيديو','Opening':'الافتتاحية','Card':'البطاقة','Photos':'الصور','Written messages':'الرسائل المكتوبة','Video messages':'رسائل الفيديو','Ending card':'بطاقة الختام','Song':'الأغنية','Length':'المدة','Until the song ends':'حتى تنتهي الأغنية','Just the content':'المحتوى فقط','Video length':'مدة الفيديو','video messages':'رسائل فيديو','Quality':'الجودة',
  'The song is longer than what you chose, so it fades out at the end. Add photos or messages to fill it.':'الأغنية أطول مما اخترت، لذا تخفت في النهاية. أضف صوراً أو رسائل لتملأها.','What you chose is longer than the song, so the song starts again.':'ما اخترته أطول من الأغنية، لذا تبدأ الأغنية من جديد.'});
+/* iPad Safari can stop taking frames from a canvas on its own: the app hands every drawn frame to the recorder itself */
+function capStream(cv){try{const st=cv.captureStream(0),tr=st.getVideoTracks()[0];if(tr&&typeof tr.requestFrame==='function'){cv._rf=()=>{try{tr.requestFrame();}catch(e){}};return st;}st.getTracks().forEach(t=>t.stop());}catch(e){}cv._rf=null;return cv.captureStream(30);}
+{const pu=pump;pump=function(){pu();if(Show.film&&Show.cv&&Show.cv._rf)Show.cv._rf();};}
 
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
