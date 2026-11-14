@@ -5063,6 +5063,14 @@ Object.keys(ARTS).forEach(k=>{const A=ARTS[k];if(!A||!Array.isArray(A.pals)||A.n
 function palRow(){const A=ARTS[P.art];if(!A)return null;const cur=(P.pal||0)%A.pals.length;return h('div',{class:'row scroll pls'},A.pals.map((p,i)=>h('button',{class:'pl'+(cur===i?' on':''),'aria-label':T('Colours')+' '+(i+1),onclick:()=>{P.pal=i;ch();}},h('span',{style:`background:linear-gradient(135deg,${p.g[1]} 50%,${p.acc} 50%)`}))));}
 document.head.append(h('style',{},'.pls{gap:6px;padding:2px 0 6px}.pl{flex:none;width:46px;height:46px;border-radius:50%;padding:4px;background:none;border:2px solid transparent}.pl.on{border-color:#ff5c8a}.pl span{display:block;width:100%;height:100%;border-radius:50%;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset}'));
 
+/* ---------- choosing an option keeps the list where it was: the panel, its sideways rows and the page do not jump back to the start ---------- */
+let KSD=0;
+function keepScroll(fn){if(KSD)return fn();const s=$('sheet'),card=s&&s.querySelector('.card'),key=()=>[VIEW,typeof TAB==='undefined'?'':TAB,TOOL||'',s&&!s.hidden?(s.dataset.tool||'sheet'):''].join('|'),k0=key(),top=card?card.scrollTop:0,y=window.scrollY,rows=[...document.querySelectorAll('.row.scroll,.hs')].map(r=>r.scrollLeft);
+ KSD=1;let out;try{out=fn();}finally{KSD=0;}
+ try{if(key()!==k0)return out;const c2=$('sheet').querySelector('.card');if(c2&&top)c2.scrollTop=top;const r2=[...document.querySelectorAll('.row.scroll,.hs')];if(r2.length===rows.length)r2.forEach((r,i)=>{if(rows[i])r.scrollLeft=rows[i];});if(Math.abs(window.scrollY-y)>2)window.scrollTo(0,y);}catch(e){}return out;}
+{const r9=render;render=function(){return keepScroll(()=>r9());};}
+{const o9=openTool;openTool=function(id){return keepScroll(()=>o9(id));};}
+
 /* ---------- start ---------- */
 (async()=>{P=blank();const s=await dget('proj');if(s)P=Object.assign(blank(),s);
  for(const id of [...P.photos,P.face,P.face2].filter(Boolean)){const b=await dget('ph:'+id);if(b){try{IMG[id]=await loadImg(b);URLS[id]=IMG[id].src;}catch(e){}}}
