@@ -6197,6 +6197,25 @@ const PXN={px_full:['Full photo','صورة كاملة'],px_side:['Side by side',
 Object.keys(PXN).forEach(k=>Object.defineProperty(LNAME,k,{value:PXN[k],enumerable:false}));
 /* offered first on every post that has a photo */
 {const z0=czLayouts;czLayouts=function(){const L=z0().filter(q=>q[0]!=='s_full'&&q[0]!=='full');if(!(P.photos||[]).some(id=>IMG[id]))return L;return[...Object.keys(PXN).map(k=>[k,L2(PXN[k])]),...L.filter(q=>!PXN[q[0]])];};}
+
+/* ---------- five more: two photos, a photo band, a thick frame, a corner photo, a bold tinted poster ---------- */
+Object.assign(LX,{
+px_two(c,W,H,t){const X=pxSet(c,W,H,t),ims=P.photos.map(i=>IMG[i]).filter(Boolean),g=X.m*.012,top=X.m*.05,ph=X.tall?H*.44:H*(X.wide?.6:.5),w=(W-X.m*.1-g)/2;
+ [0,1].forEach(i=>{const x=X.m*.05+(RTL?1-i:i)*(w+g),im=ims[i]||ims[0],y=top+(i?ph*.08:0),hh=ph*.92;c.save();c.shadowColor='rgba(0,0,0,.3)';c.shadowBlur=X.m*.03;c.fillStyle='#fff';rr(c,x-g*.4,y-g*.4,w+g*.8,hh+g*.8,X.m*.02);c.fill();c.restore();c.save();rr(c,x,y,w,hh,X.m*.016);c.clip();if(im)cover(c,im,x,y,w,hh,1,0,0);else{c.fillStyle=hexA(X.acc,.25);c.fillRect(x,y,w,hh);}c.restore();});
+ pxWords(c,W,H,t,W/2,top+ph+X.m*.06,pxBot(H,X),W*.84,X.ink,X.acc,X.E);pxEnd(c,W,H,X);},
+px_band(c,W,H,t){const X=pxSet(c,W,H,t),bh=H*(X.wide?.5:X.tall?.36:.4),y=H*(X.wide?.08:.06);pxPhoto(c,X,()=>{c.beginPath();c.rect(0,y,W,bh);},0,y,W,bh);c.fillStyle=X.acc;c.fillRect(0,y-X.m*.008,W,X.m*.008);c.fillRect(0,y+bh,W,X.m*.008);
+ pxWords(c,W,H,t,W/2,y+bh+X.m*.05,pxBot(H,X),X.wide?W*.7:W*.84,X.ink,X.acc,X.E);pxEnd(c,W,H,X);},
+px_frame(c,W,H,t){const X=pxSet(c,W,H,t),b=X.m*.05,w=X.wide?W*.42:W-2*b*1.6,h=X.wide?H-2*b*1.6:H*(X.tall?.5:.52),x=X.wide?(RTL?W-b*1.6-w:b*1.6):b*1.6,y=b*1.6;c.fillStyle=X.acc;c.fillRect(x-b*.6,y-b*.6,w+b*1.2,h+b*1.2);c.fillStyle='#ffffff';c.fillRect(x-b*.18,y-b*.18,w+b*.36,h+b*.36);pxPhoto(c,X,()=>{c.beginPath();c.rect(x,y,w,h);},x,y,w,h);
+ if(X.wide)pxWords(c,W,H,t,RTL?W*.27:W*.73,H*.1,pxBot(H,X),W*.42,X.ink,X.acc,X.E);else pxWords(c,W,H,t,W/2,y+h+b*1.3,pxBot(H,X),W*.84,X.ink,X.acc,X.E);pxEnd(c,W,H,X);},
+px_corner(c,W,H,t){const X=pxSet(c,W,H,t),r=Math.min(W,H)*(X.wide?.95:.8),cx=RTL?0:W,cy=0;c.save();c.shadowColor='rgba(0,0,0,.3)';c.shadowBlur=X.m*.04;c.fillStyle=X.acc;c.beginPath();c.arc(cx,cy,r+X.m*.02,0,7);c.fill();c.restore();pxPhoto(c,X,()=>{c.beginPath();c.arc(cx,cy,r,0,7);},cx-r,cy-r,2*r,2*r);
+ if(X.wide)pxWords(c,W,H,t,RTL?W*.7:W*.3,H*.3,pxBot(H,X),W*.46,X.ink,X.acc,X.E);else pxWords(c,W,H,t,W/2,Math.min(H*.7,r*.92)+X.m*.04,pxBot(H,X),W*.84,X.ink,X.acc,X.E);pxEnd(c,W,H,X);},
+px_tint(c,W,H,t){const X=pxSet(c,W,H,t);pxPhoto(c,X,()=>{c.beginPath();c.rect(0,0,W,H);},0,0,W,H);c.save();c.globalCompositeOperation='saturation';c.fillStyle='#808080';c.fillRect(0,0,W,H);c.restore();c.save();c.globalCompositeOperation='multiply';c.fillStyle=X.acc;c.fillRect(0,0,W,H);c.restore();c.fillStyle='rgba(0,0,0,.35)';c.fillRect(0,0,W,H);
+ const b=X.m*.04;c.strokeStyle='rgba(255,255,255,.85)';c.lineWidth=X.m*.004;c.strokeRect(b,b,W-2*b,H-2*b);c.save();c.shadowColor='rgba(0,0,0,.4)';c.shadowBlur=X.m*.02;pxWords(c,W,H,t,W/2,H*(X.wide?.18:.3),pxBot(H,X),W*(X.wide?.6:.82),'#ffffff','#ffffff',X.E);c.restore();pxEnd(c,W,H,X);}});
+Object.assign(PXN,{px_two:['Two photos','صورتان'],px_band:['Photo band','شريط صورة'],px_frame:['Thick frame','إطار عريض'],px_corner:['Corner photo','صورة في الزاوية'],px_tint:['Tinted poster','بوستر ملوّن']});
+Object.keys(PXN).forEach(k=>{if(!Object.getOwnPropertyDescriptor(LNAME,k))Object.defineProperty(LNAME,k,{value:PXN[k],enumerable:false});});
+/* every post gets every photo layout (an empty frame until a photo is added), and shop posts get every shop layout too: never fewer than 15 */
+{const SHL=['s_hero','s_burst','s_frame','s_side','s_tag','s_list','s_pack'];const z1=czLayouts;czLayouts=function(){const L=z1().filter(q=>!PXN[q[0]]),out=[...Object.keys(PXN).map(k=>[k,L2(PXN[k])]),...L];
+ if(isShop())SHL.forEach(k=>{if(LX[k]&&!out.some(q=>q[0]===k)&&LNAME[k])out.push([k,L2(LNAME[k])]);});return out;};}
 /* ---------- a Layout row at the top of Design, so layouts are one tap away ---------- */
 {const ot=openTool;openTool=function(id){const r=ot.apply(this,arguments);if(id!=='design')return r;const card=$('sheet').querySelector('.card'),grid=card&&card.querySelector('.tg3');if(!grid)return r;let L=[];try{L=czLayouts();}catch(e){}if(!L.length)return r;
  const hasPh=(P.photos||[]).some(id=>IMG[id]),cur=P.layout,first=grid.previousElementSibling&&grid.previousElementSibling.previousElementSibling;
