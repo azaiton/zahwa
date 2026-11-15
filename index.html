@@ -12,7 +12,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tap-highlight-color:transparent}
 button,input,textarea{font:inherit;color:inherit}button{cursor:pointer;border:0;background:none}
 button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--pri);outline-offset:2px}
-#app{max-width:1080px;margin:0 auto;padding-block:0 110px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+#app{max-width:1080px;margin:0 auto;padding-block:env(safe-area-inset-top,0px) 110px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .top{display:flex;align-items:center;gap:8px;padding:12px 0}.logo{font-size:21px;font-weight:900}.logo b{background:linear-gradient(90deg,var(--pri),var(--pri2));-webkit-background-clip:text;background-clip:text;color:transparent}.sp{flex:1}
 .ghost{padding:8px 14px;border-radius:999px;background:var(--chip);font-weight:700;font-size:14px}
 .hero{padding:14px 0 6px}.hero h1{font-size:clamp(27px,7vw,44px);line-height:1.25;margin:0 0 8px;font-weight:900;text-wrap:balance}.hero p{color:var(--mut);margin:0;max-width:520px}
