@@ -5316,7 +5316,11 @@ body.tooled #app{padding-inline-end:calc(min(430px,42vw) + 22px)}
 body.tooled .stc #cv{max-height:62vh}
 body.tooled .tools{grid-template-columns:repeat(auto-fit,minmax(76px,1fr))}
 }
-@media(max-width:899px){body.tooled .stc #cv{max-height:calc(46vh - 96px)}body.tooled .stc .hint{display:none}}`));
+@media(max-width:899px){body .stc #cv{max-height:56vh}body.tooled .stc #cv{max-height:calc(46vh - 96px)}body.tooled .stc .hint{display:none}}`));
+/* iPhone can miss the focusout when the keyboard closes, which left the preview shrunk; clear it whenever no text field has the focus */
+{const tyOff=()=>{const a=document.activeElement;if(!a||!/INPUT|TEXTAREA/.test(a.tagName)||/checkbox|range|file|color/.test(a.type))document.body.classList.remove('typing');};
+ const rT=render;render=function(){const r=rT.apply(this,arguments);setTimeout(tyOff,0);return r;};
+ addEventListener('pointerdown',()=>setTimeout(tyOff,120),true);if(window.visualViewport)visualViewport.addEventListener('resize',()=>setTimeout(tyOff,120));addEventListener('pageshow',tyOff);}
 {const t9=toolSheet;toolSheet=function(){const r=t9.apply(this,arguments);document.body.classList.add('tooled');return r;};}
 {const c9=closeSheet;closeSheet=function(){document.body.classList.remove('tooled');return c9.apply(this,arguments);};}
 
