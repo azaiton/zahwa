@@ -6711,6 +6711,46 @@ for(let k=0;k<SMAX;k++)cpPut(k);
  const row=h('div',{class:'row scroll'},sets.map(([k,s])=>h('button',{class:'pl pmy'+(WL.pal===CSB+k?' on':''),'aria-label':T('Your colour set'),onclick:()=>{WL.pal=CSB+k;wlCh(1);}},h('span',{style:`background:linear-gradient(135deg,${s.g[0]} 0 45%,${s.ink} 45% 55%,${s.acc} 55%)`}))));
  const lb=[...card.querySelectorAll('.lbl')].find(x=>x.textContent===T('Colours'));(lb||card.lastElementChild).after(h('div',{class:'lbl'},T('My colours')),row);return r;};}
 
+/* ---------- colour row v2: taps never add copies or move options; light and dark are grouped ---------- */
+palRemember=function(){};
+if(MYC.r.length){MYC.r=[];mycSave();}
+/* each background knows which tones it supports: light, dark or both */
+const toneOf=p=>{if(!p)return'd';const bg=m2hex(p.g&&p.g[1])?p.g[1]:p.g&&p.g[0];return(p.lite||(m2hex(bg)&&m2lum(bg)>.55))?'l':'d';};
+Object.keys(ARTS).forEach(k=>{const A=ARTS[k],n=Math.min(A.nb||A.pals.length,A.pals.length);let l=0,d=0;for(let i=0;i<n;i++)toneOf(A.pals[i])==='l'?l++:d++;A.tones=l&&d?'both':l?'light':'dark';});
+let PTONE='';
+/* the logo colour set for new designs: one look, made once per logo, never changed under saved posts */
+function logoSig(){const im=BRIMG;if(!im)return'';if(im._sig)return im._sig;try{const c=document.createElement('canvas');c.width=c.height=8;const x=c.getContext('2d');x.drawImage(im,0,0,8,8);im._sig=[...x.getImageData(0,0,8,8).data].filter((v,i)=>i%7===0).join('.');}catch(e){im._sig='x';}return im._sig;}
+function logoAutoIdx(){if(!BRIMG||BR.logoCol===0)return -1;const sig=logoSig(),v=BR.logoVar||'light';let k=MYS.findIndex(q=>q&&q.logo==='auto'&&q.sig===sig&&q.var===v);if(k>=0)return k;const S=logoSets();if(!S)return -1;const s=(S.find(q=>q[0]===v)||S[0])[2];
+ k=MYS.findIndex((q,j)=>!q&&!cpUsedAny(j));if(k<0)k=MYS.length<SMAX?MYS.length:MYS.findIndex((q,j)=>!cpUsedAny(j)&&!(q&&q.logo==='auto'&&q.sig===sig));if(k<0)return -1;MYS[k]=Object.assign({},s,{logo:'auto',sig,var:v,from:0});mysSave();cpPut(k);return k;}
+const LOGOOK=id=>isShopId(id)||(typeof BIZ!=='undefined'&&BIZ.includes(id));const isShopId=id=>SHOP.includes(id);
+{const tp=tpls;tpls=function(id){const L=tp.apply(this,arguments);if(!LOGOOK(id))return L;const k=logoAutoIdx();if(k<0)return L;return L.map(d=>ARTS[d.art]&&!ARTS[d.art].fixed?Object.assign({},d,{palT:d.pal||0,pal:CSB+k}):d);};}
+{const a0=applyTpl;applyTpl=function(d){const r=a0.apply(this,arguments);if(d&&d.palT!=null)P.palT=d.palT;else if(d)P.palT=d.pal||0;return r;};}
+if(typeof DK!=='undefined'&&!DK.includes('palT'))DK.push('palT');
+/* the colour row: a Light / Dark switch, logo colours and the original colours first, then one stable row of options */
+{const ot=openTool;openTool=function(id){const r=ot.apply(this,arguments);if(id!=='design'||DTAB!=='c')return r;const row=$('sheet').querySelector('.pls'),A=ARTS[P.art];if(!row||!A)return r;
+ const pics=[...row.querySelectorAll('button.pl.plpic')],idx=b=>{const m=(b.getAttribute('aria-label')||'').match(/(\d+)$/);return m?+m[1]-1:-1;},cur=P.pal||0,curTone=cur<(A.nb||0)?toneOf(A.pals[cur]):'';
+ if(!PTONE)PTONE=A.tones==='dark'?'d':(curTone||'l');if(A.tones==='dark')PTONE='d';if(A.tones==='light')PTONE='l';
+ row.querySelectorAll('button.pl').forEach(b=>{if(b.getAttribute('aria-label')===T('Your colour')&&cur>=CSB)b.remove();});pics.forEach(b=>{const i=idx(b);b.style.display=i>=0&&toneOf(A.pals[i])!==PTONE?'none':'';});
+ const seg=h('div',{class:'seg ptone'},[['l',T('Light')],['d',T('Dark')]].map(([k,l])=>h('button',{class:PTONE===k?'on':'',disabled:(k==='l'&&A.tones==='dark')||(k==='d'&&A.tones==='light'),onclick:()=>{PTONE=k;openTool('design');}},l)));
+ row.before(seg);if(A.tones==='dark')seg.after(h('small',{class:'pgn'},T('This background is made for dark colours. For light colours, choose another background.')));
+ const lk=BRIMG?MYS.findIndex(q=>q&&q.logo==='auto'&&q.sig===logoSig()):-1,chips=[];
+ if(BRIMG)chips.push(h('button',{class:'chip'+(lk>=0&&cur===CSB+lk?' on':''),onclick:()=>{const k=logoAutoIdx();if(k<0){useLogoCols();return;}P.pal=CSB+k;TC.clear();ch();}},'🏷 '+T('Logo colours')));
+ if(P.palT!=null&&cur!==P.palT)chips.push(h('button',{class:'chip',onclick:()=>{P.pal=P.palT;TC.clear();ch();}},'↶ '+T('Original colours')));
+ if(chips.length)seg.before(h('div',{class:'row',style:'justify-content:flex-start;gap:8px;margin-bottom:6px'},chips));
+ if(lk>=0&&cur===CSB+lk)seg.before(h('small',{class:'pgn'},'✓ '+T('Using your logo colours')));
+ const on=row.querySelector('.pl.on');if(on&&on.style.display!=='none')setTimeout(()=>on.scrollIntoView({block:'nearest',inline:'center'}),30);return r;};}
+/* My shop: the logo colours switch and the look */
+{const b0=brandSheet;brandSheet=function(){const r=b0.apply(this,arguments);const card=$('sheet').querySelector('.card');if(!card||!BRIMG)return r;const v=BR.logoVar||'light';
+ card.append(h('div',{class:'lbl'},T('Logo colours')),h('label',{class:'chk'},h('input',{type:'checkbox',checked:BR.logoCol!==0,onchange:e=>{BR.logoCol=e.target.checked?1:0;brandSave();TC.clear();}}),h('span',{},T('Use my logo colours on new page and shop designs'))),
+  h('div',{class:'seg'},[['light',T('Light')],['dark',T('Dark')],['bold',T('Bold')]].map(([k,l])=>h('button',{class:v===k?'on':'',onclick:()=>{BR.logoVar=k;brandSave();TC.clear();brandSheet();}},l))),h('small',{},T('Saved posts keep their colours. Only new designs use the logo colours.')));return r;};}
+document.head.append(h('style',{},'.ptone{display:flex;margin:4px 0 8px}.ptone button{flex:1}.ptone button:disabled{opacity:.35}.pgn{display:block;margin:0 0 8px;opacity:.85}'));
+Object.assign(AR,{'Logo colours':'ألوان الشعار','Original colours':'الألوان الأصلية','Using your logo colours':'يستخدم ألوان شعارك','Use my logo colours on new page and shop designs':'استخدم ألوان شعاري في تصاميم الصفحة والمتجر الجديدة','Saved posts keep their colours. Only new designs use the logo colours.':'المنشورات المحفوظة تبقى بألوانها، والتصاميم الجديدة فقط تستخدم ألوان الشعار.','This background is made for dark colours. For light colours, choose another background.':'هذه الخلفية مصممة للألوان الداكنة. للألوان الفاتحة اختر خلفية أخرى.'});
+/* ui/ux checklist · every tap target comfortable on a phone (Apple asks for 44 pt) */
+document.head.append(h('style',{},`.chip{min-height:42px;padding-top:8px;padding-bottom:8px}.stm .chip{min-width:44px}
+label.chk{min-height:44px;display:flex;align-items:center;gap:10px}label.chk input[type=checkbox]{width:22px;height:22px;flex:none}
+.tc.pr>button:not(:first-child),.tc .del,.tc .dup{min-width:40px;min-height:40px}`));
+document.head.append(h('style',{},'.seg button{min-height:40px}'));
+
 /* ---------- choosing an option keeps the list where it was: the panel, its sideways rows and the page do not jump back to the start ---------- */
 let KSD=0;
 function keepScroll(fn){if(KSD)return fn();const s=$('sheet'),card=s&&s.querySelector('.card'),key=()=>[VIEW,typeof TAB==='undefined'?'':TAB,TOOL||'',s&&!s.hidden?(s.dataset.tool||'sheet'):''].join('|'),k0=key(),top=card?card.scrollTop:0,y=window.scrollY,rows=[...document.querySelectorAll('.row.scroll,.hs')].map(r=>r.scrollLeft);
