@@ -6751,6 +6751,30 @@ label.chk{min-height:44px;display:flex;align-items:center;gap:10px}label.chk inp
 .tc.pr>button:not(:first-child),.tc .del,.tc .dup{min-width:40px;min-height:40px}`));
 document.head.append(h('style',{},'.seg button{min-height:40px}'));
 
+/* ---------- one Look picker: every tile is this post in one background and one colour set, and tapping it gives exactly that ---------- */
+/* changing the background keeps the light or dark feel and never creates new colour slots */
+palCarry=function(v){const B=ARTS[v];if(!B)return 0;const A=ARTS[P.art],cur=A&&A.pals[(P.pal||0)%A.pals.length],want=cur?toneOf(cur):'l',n=Math.min(B.nb||B.pals.length,B.pals.length);for(let i=0;i<n;i++)if(toneOf(B.pals[i])===want)return i;return 0;};
+let LOOKF='all';
+const lookPal=(k,tone)=>{const A=ARTS[k];if(!A)return -1;const n=Math.min(A.nb||A.pals.length,A.pals.length);for(let i=0;i<n;i++)if(toneOf(A.pals[i])===tone)return i;return -1;};
+function lookGrid(){const tone=PTONE||'l',fam=STYF.find(f=>f[0]===LOOKF),keys=Object.keys(ARTS).filter(k=>LOOKF==='all'||!fam||fam[3].includes(k)),base=JSON.parse(JSON.stringify(P));
+ const cells=keys.map(k=>{const i=lookPal(k,tone);if(i<0)return null;const on=P.art===k&&(P.pal||0)===i;return h('button',{class:'lk'+(on?' on':''),onclick:()=>{P.art=k;P.pal=i;TC.clear();ch();}},lyThumb(Object.assign({},base,{art:k,pal:i})),h('small',{},L2(ARTS[k].n)));}).filter(Boolean);
+ return cells.length?h('div',{class:'lkg'},cells):h('small',{class:'pgn'},T('No backgrounds of this style in this tone. Try the other tone.'));}
+{const ot=openTool;openTool=function(id){const r=ot.apply(this,arguments);if(id!=='design'||DTAB!=='c')return r;const card=$('sheet').querySelector('.card');if(!card)return r;
+ /* the old background strip and its label make way for the Look picker */
+ const strip=card.querySelector('.bgst');if(!strip)return r;const lb=strip.previousElementSibling&&strip.previousElementSibling.classList.contains('lbl')?strip.previousElementSibling:[...card.querySelectorAll('.lbl')].find(x=>x.textContent.trim()===T('Background'));const hint=card.querySelector('.bghint');
+ if(!PTONE)PTONE='l';const tone=h('div',{class:'seg ptone'},[['l',T('Light')],['d',T('Dark')]].map(([k,l])=>h('button',{class:PTONE===k?'on':'',onclick:()=>{PTONE=k;openTool('design');}},l)));
+ const fams=h('div',{class:'row scroll'},STYF.map(([k,en,ar])=>h('button',{class:'chip'+(LOOKF===k?' on':''),onclick:()=>{LOOKF=k;openTool('design');}},P.lang==='ar'?ar:en)));
+ const head=h('div',{class:'lbl'},T('Look: background and colours')),sub=h('small',{class:'pgn'},T('Each picture is your post in that look. Tap one to use it exactly.'));
+ const extra=[...card.querySelectorAll('.ptone')];const chipsRow=extra.length?extra[0].previousElementSibling:null;const logoRow=[...card.querySelectorAll('.row')].find(x=>x.textContent.includes(T('Logo colours'))||x.textContent.includes(T('Original colours')));const using=[...card.querySelectorAll('.pgn')].find(x=>x.textContent.includes(T('Using your logo colours')));extra.forEach(x=>x.remove());void chipsRow;
+ const box=h('div',{class:'lkbox'},head,sub,logoRow||'',using||'',hint||'',tone,fams,lookGrid());if(lb)lb.remove();strip.replaceWith(box);
+ /* the shades row of the current background stays below, titled plainly */
+ const pls=card.querySelector('.pls');if(pls){const t=[...card.querySelectorAll('.lbl')].find(x=>x.nextElementSibling===pls||x.nextElementSibling&&x.nextElementSibling.contains&&x.nextElementSibling.contains(pls));if(t)t.textContent=T('More shades of this look');}
+ const on=box.querySelector('.lk.on');if(on)setTimeout(()=>on.scrollIntoView({block:'nearest'}),40);return r;};}
+document.head.append(h('style',{},`.lkg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 0 14px}.lk{display:flex;flex-direction:column;gap:4px;align-items:center;padding:0;background:none;border:0;color:inherit}
+.lk canvas{width:100%!important;height:auto!important;aspect-ratio:4/5;border-radius:12px;display:block;outline:2px solid transparent;outline-offset:2px}.lk.on canvas{outline-color:var(--pri)}.lk small{font-size:11px;opacity:.85;text-align:center;line-height:1.2}.lk.on small{color:var(--pri);font-weight:800}
+.lkbox{margin-bottom:6px}`));
+Object.assign(AR,{'Look: background and colours':'الشكل: الخلفية والألوان','Each picture is your post in that look. Tap one to use it exactly.':'كل صورة هي منشورك بهذا الشكل. اضغط عليها لتحصل عليها كما هي تماماً.','More shades of this look':'درجات أخرى لهذا الشكل','No backgrounds of this style in this tone. Try the other tone.':'لا توجد خلفيات من هذا النوع بهذه الدرجة. جرّب الدرجة الأخرى.'});
+
 /* ---------- choosing an option keeps the list where it was: the panel, its sideways rows and the page do not jump back to the start ---------- */
 let KSD=0;
 function keepScroll(fn){if(KSD)return fn();const s=$('sheet'),card=s&&s.querySelector('.card'),key=()=>[VIEW,typeof TAB==='undefined'?'':TAB,TOOL||'',s&&!s.hidden?(s.dataset.tool||'sheet'):''].join('|'),k0=key(),top=card?card.scrollTop:0,y=window.scrollY,rows=[...document.querySelectorAll('.row.scroll,.hs')].map(r=>r.scrollLeft);
