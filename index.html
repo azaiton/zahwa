@@ -4612,9 +4612,9 @@ const shHex=x=>{x=String(x||'');if(/^#[0-9a-f]{3}$/i.test(x))x='#'+x[1]+x[1]+x[2
 const shNum=v=>/^[\d.,\s٠-٩٫٬]+$/.test(v);
 const shPrice=v=>{v=String(v||'').trim();if(!v)return'';const r=shNum(v)&&brS('cur')?v+' '+brS('cur'):v;return /[؀-ۿ]/.test(r)?r:ltr(r);};
 const shOff=()=>{const o=String(P.off||'').trim();if(o)return ltr(o);const n=x=>parseFloat(String(x||'').replace(/[^\d.]/g,'')),a=n(P.old),b=n(P.price);return a>b&&b>0?ltr('-'+Math.round((1-b/a)*100)+'%'):'';};
-const shCta=()=>P.nocta?'':String(P.cta||'').trim()||L2(P.occ==='ordernow'?['Message us','راسلونا']:P.occ==='thankc'?['Order again','اطلب مجدداً']:P.occ==='order'?['Order yours','اطلب مثله']:['Order now','اطلب الآن']);
+const shCta=()=>P.nocta?'':String(P.cta||'').trim()||L2(P.occ==='ordernow'?['Message us','راسلونا']:P.occ==='thankc'?['Order again','اطلب مجدداً']:P.occ==='order'?['Order yours','اطلب مثله']:((typeof CTAT!=='undefined'&&CTAT[BR.type])||['Order now','اطلب الآن']));
 const shUntil=()=>{const u=String(P.until||'').trim();return u?L2(['Offer ends ','العرض حتى '])+u:'';};
-const shKind=()=>BR.type==='gift'?'gift':BR.type==='cake'?'cake':(OCCIC[P.occ]||'spark');
+const shKind=()=>(PTIC[BR.type]&&BR.type!=='other'?PTIC[BR.type]:(OCCIC[P.occ]||'spark'));
 function shIc(c,k,x,y,size,col,lw){const p=P2D[k]||(P2D[k]=new Path2D(ICONS[k]||ICONS.spark));c.save();c.translate(x-size/2,y-size/2);c.scale(size/24,size/24);c.strokeStyle=col;c.lineWidth=lw||1.5;c.lineCap='round';c.lineJoin='round';c.stroke(p);c.restore();}
 function shRR(c,x,y,w,h,r){c.beginPath();if(c.roundRect)c.roundRect(x,y,w,h,r);else c.rect(x,y,w,h);}
 
@@ -4756,7 +4756,7 @@ SC.brand=function(c,W,H,lt,sc,T_){const s=U(W,H),lite=!!T_.shc,D=m2dark(T_),cx=W
  [['phone',brS('phone')&&ltr(brS('phone'))],['chat',brS('handle')&&ltr(brS('handle'))],['pin',brS('addr')]].filter(q=>q[1]).forEach(([ik,tx],i)=>{const a=ease((lt-1.1-i*.2)/.4);if(a<=0){y+=s*9.5;return;}const z=s*5;setF(c,z,FONT.clean,700);const tw=Math.min(W*.7,c.measureText(tx).width),yy=y+(1-a)*s*4;c.save();c.globalAlpha=a;shIc(c,ik,cx-d*(tw/2+z*.95),yy,z*1.25,AC,1.9);c.restore();text(c,tx,cx+d*z*.55,yy,{size:z,fam:FONT.clean,color:IK,w:700,a,max:W*.7,sh:0,fx:0});y+=s*9.5;});
  const kb=back((lt-1.9)/.5);if(kb>0){const p=kb*(1+.025*Math.sin(lt*5));c.save();c.translate(cx,Math.max(y+s*6,H*.8));c.scale(p,p);shBtn(c,0,0,s*4.6,shCta(),AC,shOn(AC),W*.8);c.restore();}};
 M2NEW.add('deal');M2NEW.add('brand');
-function shPlan(){const S=[],add=(k,d,x)=>S.push(Object.assign({k,d},x||{}));add('card',4.6);const ph=P.photos.filter(i=>IMG[i]);if(ph.length>1)ph.forEach((id,i)=>add('photo',3.2,{id,i,sx:1}));if(P.occ==='steps'||P.occ==='giveaway')(P.items||[]).filter(q=>q&&String(q.n||'').trim()).slice(0,6).forEach((q,i)=>add('step',2.8,{i,m:String(q.n).trim()}));if(P.occ!=='menu'&&(String(P.price||'').trim()||shOff()))add('deal',4.2);if(brOn())add('brand',4.2);else add('card',3.6,{fin:1});return S;}
+function shPlan(){const S=[],add=(k,d,x)=>S.push(Object.assign({k,d},x||{}));add('card',4.6);const ph=P.photos.filter(i=>IMG[i]);if(ph.length>1)ph.forEach((id,i)=>add('photo',3.2,{id,i,sx:1}));if(P.occ==='steps'||P.occ==='giveaway'||P.occ==='info')(P.items||[]).filter(q=>q&&String(q.n||'').trim()).slice(0,6).forEach((q,i)=>add('step',2.8,{i,m:String(q.n).trim()}));if(P.occ!=='menu'&&(String(P.price||'').trim()||shOff()))add('deal',4.2);if(brOn())add('brand',4.2);else add('card',3.6,{fin:1});return S;}
 const shT=S=>{let t=0;S.forEach(q=>{q.t=t;t+=q.d;});S.T=t;return S;};
 {const t0=timeline;timeline=function(){if(isShop())return shT(shPlan());const S=t0();if(brOn()){S.push({k:'brand',d:3.6,t:S.T});S.T+=3.6;}return S;};}
 {const v0=vxPlan;vxPlan=async function(){if(!isShop()){const S=await v0();if(brOn()){S.push({k:'brand',d:3.6,t:S.T});S.T+=3.6;}return S;}const S=shT(shPlan()),sg=vxSong();S.sg=sg;S.sd=isCustId(sg)?await songMeta(sg):0;S.note='';return S;};}
@@ -4769,7 +4769,7 @@ function brandSheet(){closeSheet();const cv=h('canvas',{width:640,height:150,sty
  inB=(k,label,ph,o)=>fld(label,h('input',Object.assign({id:'b_'+k,value:BR[k]||'',placeholder:ph||'',dir:'auto',oninput:e=>set(k,e.target.value)},o||{})));
  sheet(h('h3',{},T('My shop')),h('small',{},T('Add your shop once. Your name, logo and contact then appear on every image and video you make.')),cv,
   h('div',{class:'row',style:'justify-content:flex-start'},h('label',{class:'btn pri'},T(BRIMG?'Change the logo':'Add your logo'),fi),BRIMG&&h('button',{class:'btn',onclick:()=>{BRIMG=null;BR.logo=0;ddel('brandlogo');brandSave();brandSheet();}},T('Remove'))),
-  fld(T('What do you sell?'),h('div',{class:'seg'},[['cake',T('Cakes and sweets')],['gift',T('Gifts')],['other',T('Other')]].map(([v,l])=>h('button',{class:BR.type===v?'on':'',onclick:()=>{BR.type=v;brandSave();brandSheet();}},l)))),
+  fld(T('What kind of page is it?'),h('div',{class:'seg segw'},PTYPES.map(([v,,n])=>[v,L2(n)]).map(([v,l])=>h('button',{class:BR.type===v?'on':'',onclick:()=>{BR.type=v;brandSave();brandSheet();}},l)))),
   inB('name',T('Shop name')),inB('tag',T('Short line under the name (optional)')),inB('phone',T('Phone or WhatsApp'),'',{inputmode:'tel',dir:'ltr'}),inB('handle',T('Page name or @account'),'',{dir:'ltr'}),inB('addr',T('City or address (optional)')),inB('cur',T('Currency, added after prices (optional)'),P.lang==='ar'?'د.أ':'JOD'),
   h('label',{class:'chk'},h('input',{type:'checkbox',checked:!!BR.on,onchange:e=>{BR.on=e.target.checked?1:0;brandSave();pv();}}),h('span',{},T('Show my shop on my designs'))),
   h('button',{class:'btn pri',onclick:()=>{closeSheet();render();}},T('Done')+' ✓'));pv();}
@@ -4902,7 +4902,7 @@ const BRK=['type','name','tag','phone','handle','addr','cur'];
 async function brandExport(){if(!brHas()){toast(T('Add your shop details first'));return;}const s={on:BR.on?1:0};BRK.forEach(k=>{s[k]=BR[k]||'';});const out={app:'zahwa',v:1,shop:s,logo:null};
  try{if(BR.logo){const b=await dget('brandlogo');if(b)out.logo=await b2u(b);}}catch(e){}
  const nm=(brS('name')||'shop').replace(/[\\/:*?"<>|]+/g,'').trim().slice(0,40)||'shop';await saveFile(new Blob([JSON.stringify(out)],{type:'application/json'}),nm+'.zahwa-shop.json');}
-async function brandApply(o){const s=o.shop||{};BRK.forEach(k=>{BR[k]=String(s[k]==null?'':s[k]).slice(0,120);});if(!['cake','gift','other'].includes(BR.type))BR.type='other';BR.on=s.on===0?0:1;BRIMG=null;BR.logo=0;
+async function brandApply(o){const s=o.shop||{};BRK.forEach(k=>{BR[k]=String(s[k]==null?'':s[k]).slice(0,120);});if(!PTYPES.some(q=>q[0]===BR.type))BR.type='other';BR.on=s.on===0?0:1;BRIMG=null;BR.logo=0;
  if(/^data:image\/(png|jpeg|webp);base64,/.test(o.logo||'')){try{const im=await loadImg(await u2b(o.logo)),k=Math.min(1,512/Math.max(im.width,im.height)),cc=h('canvas',{width:Math.round(im.width*k),height:Math.round(im.height*k)});cc.getContext('2d').drawImage(im,0,0,cc.width,cc.height);await dset('brandlogo',await new Promise(r=>cc.toBlob(r,'image/png')));BRIMG=cc;BR.logo=1;}catch(e){}}
  if(!BR.logo){try{await ddel('brandlogo');}catch(e){}}
  clearTimeout(brT);await dset('brand',BR);TC.clear();DIRTY=1;render();brandSheet();toast(T('Your shop was added'));}
@@ -5564,6 +5564,95 @@ Object.assign(AR,{'Business and companies':'الشركات والأعمال'});
 {const g0=glitter;glitter=function(c,W,H,t,T_){const A=ARTS[P.art];if(A&&A.calm)return;return g0(c,W,H,t,T_);};}
 /* Independence Day opens with the national designs */
 {const tp=tpls;tpls=function(id){const L=tp(id);if(id==='independence'){const a=L.filter(d=>d.art==='nation'),b=L.filter(d=>d.art!=='nation');return[...a,...b].map((d,i)=>Object.assign(d,{v:i}));}return L;};}
+
+/* ---------- any page owner, not just shops: clinics, salons, restaurants, teachers, services; and a tips and information post ---------- */
+Object.assign(ICONS,{steth:'M6 3v6a4 4 0 0 0 8 0V3M10 13v3a4 4 0 0 0 8 0v-2M18 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4M4 3h4M12 3h4',scissors:'M6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8.1 7.9 20 18M8.1 16.1 20 6M12 12h.01',cup:'M4 8h13v5a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6zM17 9h1.5a2.5 2.5 0 0 1 0 5H17M8 2.5v3M12 2.5v3',book:'M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5M8 7h8',wrench:'M14.5 6.5a4 4 0 0 0 5 5L21 13l-8 8-3-3 8-8-1.5-1.5a4 4 0 0 0-5-5L13 5zM3 21l6-6'});
+/* page types, their icon and label */
+const PTYPES=[['cake','cake',['Cakes and sweets','كيك وحلويات']],['gift','gift',['Gifts','هدايا']],['clinic','steth',['Doctor or clinic','طبيب أو عيادة']],['beauty','scissors',['Salon and beauty','صالون وتجميل']],['food','cup',['Restaurant or café','مطعم أو مقهى']],['edu','book',['Teacher or courses','تعليم ودورات']],['services','wrench',['Services','خدمات']],['other','spark',['Other','أخرى']]];
+const PTIC={};PTYPES.forEach(([k,ic])=>{PTIC[k]=ic;});
+/* sample content for each new kind of page */
+Object.assign(SHS,{clinic:{name:['Full check-up','فحص شامل'],price:'25',old:'35',items:[['Consultation','كشفية','20'],['Follow-up visit','مراجعة','10'],['Full check-up','فحص شامل','25'],['Blood tests package','باقة فحوصات الدم','30'],['Home visit','زيارة منزلية','40']]},
+ beauty:{name:['Bridal makeup','مكياج عروس'],price:'120',old:'150',items:[['Haircut and styling','قص وتسريح','10'],['Hair colour','صبغة شعر','35'],['Evening makeup','مكياج سهرة','40'],['Manicure and pedicure','مناكير وبديكير','12'],['Bridal makeup','مكياج عروس','120']]},
+ food:{name:['Family meal','وجبة العائلة'],price:'15',old:'19',items:[['Burger meal','وجبة برجر','5'],['Shawarma meal','وجبة شاورما','4'],['Large pizza','بيتزا كبيرة','8'],['Fresh salad','سلطة طازجة','3.5'],['Fresh juice','عصير طبيعي','2']]},
+ edu:{name:['English course','دورة لغة إنجليزية'],price:'60',old:'80',items:[['Private lesson','حصة خاصة','15'],['Monthly package','باقة شهرية','100'],['Exam preparation','تحضير للامتحانات','80'],['Online course','دورة أونلاين','40']]},
+ services:{name:['Home cleaning','تنظيف منازل'],price:'35',old:'45',items:[['Home cleaning','تنظيف منازل','35'],['AC maintenance','صيانة مكيفات','20'],['Deep sofa cleaning','تنظيف كنب عميق','25'],['Pest control','مكافحة حشرات','30']]}});
+Object.assign(SHTAG,{clinic:['#health #clinic #doctor #amman','#صحة #عيادة #طبيب #عمان'],beauty:['#beauty #salon #makeup #hair','#تجميل #صالون #مكياج #شعر'],food:['#food #restaurant #cafe #amman','#مطعم #أكل #مقهى #عمان'],edu:['#education #courses #learning','#تعليم #دورات #دروس_خصوصية'],services:['#services #maintenance #cleaning','#خدمات #صيانة #تنظيف']});
+Object.assign(ORDN,{clinic:['Book your appointment','احجز موعدك'],beauty:['Book your session','احجزي موعدك'],food:['Order for your gathering','اطلب لعزومتك'],edu:['Register now','سجّل الآن'],services:['Book a visit','احجز زيارة']});
+Object.assign(MKS,{clinic:[['Consultation','الاستشارة'],['Examination','الفحص'],['Treatment plan','خطة العلاج'],['Follow-up','المتابعة']],beauty:[['Preparing the skin','تحضير البشرة'],['Base and contour','الأساس والكونتور'],['Eyes and lashes','العيون والرموش'],['The final look','اللوك النهائي']],
+ food:[['Fresh ingredients','مكونات طازجة'],['Cooking','الطبخ'],['Plating','التقديم'],['Ready to serve','جاهز للتقديم']],edu:[['Placement test','اختبار تحديد المستوى'],['Lessons','الدروس'],['Practice','التطبيق'],['Certificate','الشهادة']],services:[['Inspection','المعاينة'],['Getting to work','بدء العمل'],['Quality check','فحص الجودة'],['Done','تم بنجاح']]});
+Object.assign(MNS,{clinic:{it:[[1,'Consultations','الاستشارات'],[0,'General consultation','كشفية عامة','20'],[0,'Follow-up visit','مراجعة','10'],[0,'Home visit','زيارة منزلية','40'],[1,'Packages','الباقات'],[0,'Full check-up','فحص شامل','25','best'],[0,'Blood tests package','باقة فحوصات الدم','30','new']],pol:[0,4]},
+ beauty:{it:[[1,'Hair','الشعر'],[0,'Haircut and styling','قص وتسريح','10'],[0,'Hair colour','صبغة شعر','35','best'],[0,'Keratin','كيراتين','60'],[1,'Makeup and nails','المكياج والأظافر'],[0,'Evening makeup','مكياج سهرة','40'],[0,'Manicure and pedicure','مناكير وبديكير','12','new']],pol:[0,4]},
+ food:{it:[[1,'Meals','الوجبات'],[0,'Burger meal','وجبة برجر','5','best'],[0,'Shawarma meal','وجبة شاورما','4'],[0,'Large pizza','بيتزا كبيرة','8'],[1,'Drinks','المشروبات'],[0,'Fresh juice','عصير طبيعي','2'],[0,'Coffee','قهوة','1.5','new']],pol:[0,4]},
+ edu:{it:[[1,'Lessons','الدروس'],[0,'Private lesson','حصة خاصة','15'],[0,'Monthly package','باقة شهرية','100','best'],[1,'Courses','الدورات'],[0,'Exam preparation','تحضير للامتحانات','80'],[0,'Online course','دورة أونلاين','40','new']],pol:[0,3]},
+ services:{it:[[1,'At home','في المنزل'],[0,'Home cleaning','تنظيف منازل','35','best'],[0,'Deep sofa cleaning','تنظيف كنب عميق','25'],[1,'Maintenance','الصيانة'],[0,'AC maintenance','صيانة مكيفات','20'],[0,'Pest control','مكافحة حشرات','30','new']],pol:[0,3]}});
+Object.assign(SHY.steps,{clinic:[['Call or message us to book','اتصل أو راسلنا للحجز'],['Choose a day and time','اختر اليوم والوقت'],['Come ten minutes early','احضر قبل موعدك بعشر دقائق'],['Bring your previous reports','أحضر تقاريرك السابقة']],beauty:[['Choose your service','اختاري الخدمة'],['Send us the time that suits you','أرسلي لنا الوقت المناسب'],['Confirm with a deposit','أكّدي الحجز بعربون'],['Enjoy your session','استمتعي بجلستك']],
+ food:[['Pick from our menu','اختر من قائمتنا'],['Call or message your order','اتصل أو أرسل طلبك'],['Send us your address','أرسل لنا عنوانك'],['Enjoy it hot','استمتع بها ساخنة']],edu:[['Choose your course','اختر الدورة'],['Message us to register','راسلنا للتسجيل'],['Take a placement test','قدّم اختبار تحديد المستوى'],['Start learning','ابدأ التعلّم']],services:[['Tell us what you need','أخبرنا بما تحتاجه'],['We send you a price','نرسل لك السعر'],['Pick a time','اختر الموعد'],['We come to you','نأتي إليك']]});
+Object.assign(SHY.prize,{clinic:['Win a free check-up','اربح فحصاً مجانياً'],beauty:['Win a free session','اربحي جلسة مجانية'],food:['Win a free meal','اربح وجبة مجانية'],edu:['Win a free course','اربح دورة مجانية'],services:['Win a free service','اربح خدمة مجانية']});
+/* tips and information: a title and numbered points, for any page */
+const INFO={cake:[['Keep your cake fresh','حافظ على كيكتك طازجة'],[['Keep it in the fridge','احفظها في الثلاجة'],['Take it out 30 minutes before serving','أخرجها قبل التقديم بنصف ساعة'],['Cut it with a warm knife','قطّعها بسكين دافئة'],['Enjoy it within three days','تناولها خلال ثلاثة أيام']]],
+ gift:[['Choosing the perfect gift','كيف تختار الهدية المثالية'],[['Think of what they love','فكّر بما يحبه'],['Add their name for a personal touch','أضف اسمه للمسة خاصة'],['Wrap it beautifully','اهتم بالتغليف'],['Write a short card','اكتب بطاقة قصيرة']]],
+ clinic:[['Tips for a healthy heart','نصائح لقلب سليم'],[['Walk thirty minutes a day','امشِ ثلاثين دقيقة يومياً'],['Use less salt','قلّل الملح'],['Sleep seven to eight hours','نم من سبع إلى ثماني ساعات'],['Have a yearly check-up','اعمل فحصاً دورياً كل سنة']]],
+ beauty:[['Tips for glowing skin','نصائح لبشرة نضرة'],[['Drink plenty of water','اشربي الماء بكثرة'],['Wear sunscreen every day','استخدمي واقي الشمس يومياً'],['Remove makeup before sleep','أزيلي المكياج قبل النوم'],['Moisturise morning and night','رطّبي بشرتك صباحاً ومساءً']]],
+ food:[['Why our food tastes better','سر طعم أكلنا'],[['Fresh ingredients every day','مكونات طازجة كل يوم'],['Homemade sauces','صلصات من صنعنا'],['Cooked when you order','يُطبخ عند الطلب'],['Cleanliness comes first','النظافة أولاً']]],
+ edu:[['Study smarter, not longer','ذاكر بذكاء لا لساعات أطول'],[['Short sessions with breaks','جلسات قصيرة مع استراحات'],['Summarise in your own words','لخّص بأسلوبك'],['Practise past exams','حلّ امتحانات سابقة'],['Sleep well before the exam','نم جيداً قبل الامتحان']]],
+ services:[['Keep your AC running well','حافظ على مكيفك'],[['Clean the filter every month','نظّف الفلتر كل شهر'],['Service it before summer','اعمل صيانة قبل الصيف'],['Don’t set it too low','لا تخفض الحرارة كثيراً'],['Call us for a yearly check','اتصل بنا للفحص السنوي']]],
+ other:[['Did you know?','هل تعلم؟'],[['First tip','المعلومة الأولى'],['Second tip','المعلومة الثانية'],['Third tip','المعلومة الثالثة']]]};
+OCC.push({id:'info',e:'💡',n:['Tips and info','نصائح ومعلومات'],f:'items',th:['ivory','mint','gala','mono','sunset','rose'],mu:'chill',h:['Did you know?','هل تعلم؟'],w:[["Save this post and share it with someone who needs it 💡","Questions? Message us anytime 💬"],["احفظ المنشور وشاركه مع من يحتاجه 💡","لديك سؤال؟ راسلنا في أي وقت 💬"]]});
+SHOP.push('info');OCCIC.info='list';OCCOL.info='#0ea5e9';
+SHT.info=[['editorial',0,'s_steps','elegant'],['corporate',0,'s_steps','clean'],['velvet',3,'s_steps','elegant'],['lattice',2,'s_steps','elegant'],['aurora',0,'s_steps','modern'],['pop',0,'s_steps','bold'],['corporate',1,'s_steps','modern'],['foil',3,'s_steps','elegant'],['terrazzo',0,'s_steps','clean'],['gilded',3,'s_steps','elegant']];
+{const tp=tpls;tpls=function(id){const L=tp(id);if(id==='info'){const k=P.lang==='ar'?1:0,I=INFO[BR.type]||INFO.other;L.forEach(d=>{d.head=I[0][k];d.name='';d.price='';d.old='';d.items=I[1].map(q=>({n:q[k],p:''}));});}return L;};}
+{const d0=PANEL.details;PANEL.details=()=>{if(P.occ!=='info')return d0();return[inp('head',T('Title')),h('div',{class:'lbl'},T('Points')),shItems('Point','','Add a point',6),inp('cta',T('Button text'),{placeholder:shCta()}),brRow()];};}
+/* the shop group is for any page now */
+{const i=CATS.findIndex(c=>c[1].includes('sale'));if(i>=0){CATS[i][0]='For your page or shop';if(!CATS[i][1].includes('info'))CATS[i][1].splice(Math.min(3,CATS[i][1].length),0,'info');}}
+Object.assign(AR,{'For your page or shop':'لصفحتك أو متجرك','What kind of page is it?':'ما نوع صفحتك؟','Title':'العنوان','Points':'النقاط','Point':'نقطة','Add a point':'أضف نقطة'});
+document.head.append(h('style',{},'.seg.segw{display:flex;flex-wrap:wrap!important;border-radius:18px;gap:2px}.seg.segw button{flex:1 1 auto}'));
+/* the button and the "how to" title speak the page's language: book, register, visit */
+const CTAT={clinic:['Book now','احجز موعدك'],beauty:['Book now','احجزي موعدك'],edu:['Register now','سجّل الآن'],services:['Book a visit','احجز زيارة']};
+const HOWT={clinic:['How to book','طريقة الحجز'],beauty:['How to book','طريقة الحجز'],edu:['How to register','طريقة التسجيل'],services:['How to book','طريقة الحجز']};
+{const tp=tpls;tpls=function(id){const L=tp(id),k=P.lang==='ar'?1:0;if(id==='steps'&&HOWT[BR.type])L.forEach(d=>{d.head=HOWT[BR.type][k];});if(id==='info')L.forEach((d,i)=>{d.cta=['Message us','راسلونا'][k];});return L;};}
+
+/* ---------- story sets for every post: a cover, a slide for each point, photo and message, and a closing slide with the contact; posted as a story or a carousel ---------- */
+const SB={tab:'set',fmt:'',off:{}};
+function sbSlides(){const S=[{k:'cover'}],o=P.occ,its=(P.items||[]).filter(q=>q&&String(q.n||'').trim());
+ if(['info','steps','hours','giveaway','custom'].includes(o)||(its.length&&o!=='menu'))its.slice(0,8).forEach((q,i)=>S.push({k:'item',i,q}));
+ (P.photos||[]).filter(id=>IMG[id]).slice(o==='making'?0:1,9).forEach((id,i)=>S.push({k:'photo',id,i}));
+ const ws=String(wish()||'').trim();if(ws&&!its.length)S.push({k:'msg',s:ws});
+ S.push({k:'end'});return S.map((s,i)=>Object.assign(s,{key:s.k+(s.i!=null?s.i:'')+(s.id||'')}));}
+/* the colours of the current design, read once per slide */
+function sbLook(c,W,H,t){const T_=th(),lite=!!T_.shc,m=Math.min(W,H),acc=m2hex(T_.acc)?T_.acc:'#d6336c';return{T_,lite,m,acc,ink:lite?'#1d1530':'#ffffff',card:lite?'rgba(255,255,255,.9)':'rgba(14,10,26,.62)',sub:lite?'rgba(29,21,48,.66)':'rgba(255,255,255,.75)',hf:FONT[T_.f]||FONT.clean,bf:FONT.clean};}
+function sbCard(c,L,x,y,w,h){c.save();c.shadowColor='rgba(0,0,0,.25)';c.shadowBlur=L.m*.05;c.shadowOffsetY=L.m*.012;c.fillStyle=L.card;rr(c,x,y,w,h,L.m*.045);c.fill();c.restore();c.strokeStyle=hexA(L.acc,.45);c.lineWidth=L.m*.003;rr(c,x+L.m*.016,y+L.m*.016,w-L.m*.032,h-L.m*.032,L.m*.032);c.stroke();}
+/* the counter and a swipe arrow, as on a carousel */
+function sbFoot(c,L,W,H,n,N){const z=L.m*.03,y=H-L.m*.045;c.save();c.globalAlpha=.9;const s=ltr((n+1)+' / '+N);setF(c,z,L.bf,800);const w=c.measureText(s).width+z*1.6;c.fillStyle=L.lite?'rgba(29,21,48,.75)':'rgba(255,255,255,.18)';rr(c,W-L.m*.04-w,y-z*.9,w,z*1.8,z*.9);c.fill();text(c,s,W-L.m*.04-w/2,y,{size:z,fam:L.bf,color:'#ffffff',w:800,sh:0,fx:0});
+ if(n<N-1){const ax=L.m*.06,d=RTL?-1:1;c.strokeStyle=L.lite?'#1d1530':'#ffffff';c.lineWidth=z*.18;c.lineCap='round';c.lineJoin='round';const bx=RTL?L.m*.07:W-L.m*.04-w-L.m*.07;c.beginPath();c.moveTo(bx-d*ax*.5,y);c.lineTo(bx+d*ax*.5,y);c.moveTo(bx+d*ax*.2,y-ax*.3);c.lineTo(bx+d*ax*.5,y);c.lineTo(bx+d*ax*.2,y+ax*.3);c.stroke();}c.restore();}
+function sbDraw(c,W,H,s,n,N){const t=2.4;RTL=P.lang==='ar';if(s.k==='cover'){poster(c,W,H,t);if(N>1)sbFoot(c,sbLook(c,W,H,t),W,H,n,N);return;}
+ const L=sbLook(c,W,H,t);bg(c,W,H,t,L.T_);const m=L.m,cw=Math.min(W*.86,m*.9),cx=W/2,hd=hl(1);
+ if(s.k==='item'){const ch=Math.min(H*.62,m*.95),cy=H/2-ch/2;sbCard(c,L,cx-cw/2,cy,cw,ch);text(c,hd,cx,cy+ch*.13,{size:m*.045,fam:L.hf,color:L.acc,w:800,max:cw*.8,sh:0,fx:0});
+  const r=m*.09,ny=cy+ch*.36;c.fillStyle=L.acc;c.beginPath();c.arc(cx,ny,r,0,7);c.fill();if(P.occ==='hours')shIc(c,'clock',cx,ny,r*1.1,shOn(L.acc),2);else text(c,String(s.i+1),cx,ny+r*.04,{size:r*1.05,fam:FONT.clean,color:shOn(L.acc),w:900,sh:0,fx:0});
+  lines(c,String(s.q.n),cx,cy+ch*.62,{size:m*.082,fam:L.bf,color:L.ink,w:800,max:cw*.82,sh:0,fx:0});const p=String(s.q.p||'').trim();if(p)shPill(c,cx,cy+ch*.82,m*.045,P.occ==='hours'?ltr(p):shPrice(p),L.acc,shOn(L.acc),cw*.8);}
+ else if(s.k==='photo'){const im=IMG[s.id],pw=Math.min(W*.84,m*.88),ph=Math.min(H*.66,pw*1.25),py=H*.46-ph/2;c.save();c.shadowColor='rgba(0,0,0,.35)';c.shadowBlur=m*.05;c.fillStyle='#ffffff';rr(c,cx-pw/2-m*.015,py-m*.015,pw+m*.03,ph+m*.03,m*.04);c.fill();c.restore();
+  c.save();rr(c,cx-pw/2,py,pw,ph,m*.03);c.clip();cover(c,im,cx-pw/2,py,pw,ph,1,0,0);c.restore();const cap=String(P.name||'').trim()||hd;if(cap)lines(c,cap,cx,py+ph+m*.1,{size:m*.05,fam:L.hf,color:L.lite?'#1d1530':'#ffffff',w:800,max:W*.84,shc:L.lite?null:'rgba(0,0,0,.5)'});}
+ else if(s.k==='msg'){const ch=Math.min(H*.6,m*.9),cy=H/2-ch/2;sbCard(c,L,cx-cw/2,cy,cw,ch);text(c,'“',cx,cy+ch*.2,{size:m*.2,fam:'Georgia,serif',color:L.acc,w:700,sh:0,fx:0});lines(c,s.s,cx,cy+ch*.55,{size:m*.055,fam:L.bf,color:L.ink,w:700,max:cw*.8,sh:0,fx:0});}
+ else{const ch=Math.min(H*.66,m*.98),cy=H/2-ch/2;sbCard(c,L,cx-cw/2,cy,cw,ch);let y=cy+ch*.2;if(BRIMG){brLogo(c,cx,y,m*.1);y+=m*.17;}else{c.fillStyle=L.acc;c.beginPath();c.arc(cx,y,m*.08,0,7);c.fill();shIc(c,shKind(),cx,y,m*.09,shOn(L.acc),2);y+=m*.16;}
+  const nm=brS('name')||String(P.from||'').trim()||T('Thank you');text(c,nm,cx,y,{size:m*.065,fam:L.hf,color:L.ink,w:800,max:cw*.84,sh:0,fx:0});y+=m*.075;
+  [brS('tag'),brS('phone')&&ltr('☎  '+brS('phone')),brS('handle')&&ltr(brS('handle')),brS('addr')].filter(Boolean).forEach(q=>{text(c,q,cx,y,{size:m*.036,fam:L.bf,color:L.sub,w:600,max:cw*.84,sh:0,fx:0});y+=m*.052;});
+  const ct=isShop()?shCta():'';if(ct)shBtn(c,cx,Math.max(y+m*.03,cy+ch-m*.1),m*.038,ct,L.acc,shOn(L.acc),cw*.8);}
+ if(s.k!=='end'&&brOn())brStrip(c,W/2,H-m*.16,m*.06,'#1d1530',W*.8,{pill:'#ffffff'});if(N>1)sbFoot(c,L,W,H,n,N);}
+const sbOn=S=>S.filter(s=>!SB.off[s.key]);
+function sbSize(){const f=FMT[SB.fmt]?SB.fmt:(FMT[P.fmt]?P.fmt:'story');return FMT[f].i;}
+function sbPanel(){const S=sbSlides(),ON=sbOn(S),[w,hh]=sbSize(),tw=hh>w?104:150,th2=Math.round(tw*hh/w),kr=RTL;
+ const cells=S.map(s=>{const cv=h('canvas',{width:tw*2,height:th2*2,style:`width:${tw}px;height:${th2}px;border-radius:10px;display:block`}),on=!SB.off[s.key],n=ON.indexOf(s);try{sbDraw(cv.getContext('2d'),tw*2,th2*2,s,Math.max(0,n),ON.length);}catch(e){}RTL=kr;
+  return h('button',{class:'bd sbc'+(on?'':' off'),'aria-pressed':on?'true':'false','aria-label':T('Slide')+' '+(S.indexOf(s)+1),onclick:()=>{if(s.k==='cover')return;SB.off[s.key]=on?1:0;openTool('board');}},cv,on&&h('b',{},String(n+1)),h('small',{},T(({cover:'Cover',item:'Point',photo:'Photo',msg:'Message',end:'Contact'})[s.k])));});
+ const fm=h('div',{class:'row scroll'},['story','portrait','square'].map(k=>h('button',{class:'chip'+((FMT[SB.fmt]?SB.fmt:(FMT[P.fmt]?P.fmt:'story'))===k?' on':''),onclick:()=>{SB.fmt=k;openTool('board');}},L2(FMT[k].n))));
+ return[fm,h('small',{},T('A slide for the cover, each point, photo and message, and your contact at the end. Tap a slide to leave it out.')),h('div',{class:'row scroll bds'},cells),h('button',{class:'btn pri',onclick:sbSave},'⬆ '+T('Save the set')+' ('+ON.length+')'),h('small',{},T('Post them together as a story, or as one carousel post.'))];}
+async function sbSave(){const [w,hh]=sbSize(),S=sbOn(sbSlides()),files=[],kr=RTL;toast(T('Preparing the images…'));await new Promise(r=>setTimeout(r,60));
+ for(let i=0;i<S.length;i++){const cv=document.createElement('canvas');cv.width=w;cv.height=hh;try{sbDraw(cv.getContext('2d'),w,hh,S[i],i,S.length);}catch(e){RTL=kr;continue;}RTL=kr;const b=await new Promise(r=>cv.toBlob(r,'image/jpeg',.92));if(b)files.push(new File([b],'zahwa-'+P.occ+'-'+String(i+1).padStart(2,'0')+'.jpg',{type:'image/jpeg'}));await new Promise(r=>setTimeout(r,0));}
+ if(!files.length){toast(T('Nothing to save'));return;}try{if(navigator.canShare&&navigator.canShare({files})){await navigator.share({files});return;}}catch(e){if(e&&e.name==='AbortError')return;}
+ for(const f of files)await saveFile(f,f.name);toast(files.length+' '+T('images saved'));}
+/* the storyboard opens on the story set; the video's scenes are one tap away */
+{const b0=boardPanel;boardPanel=function(){const pid=(P.id||'')+'|'+P.occ;if(SB.pid!==pid){SB.pid=pid;SB.off={};}const tabs=h('div',{class:'seg',style:'margin-bottom:6px'},[['set',T('Story set')],['vid',T('Video scenes')]].map(([k,l])=>h('button',{class:SB.tab===k?'on':'',onclick:()=>{SB.tab=k;openTool('board');}},l)));return[tabs,...(SB.tab==='vid'?b0():sbPanel())];};}
+document.head.append(h('style',{},'.sbc.off canvas{opacity:.3;filter:grayscale(1)}.sbc.off small{text-decoration:line-through}'));
+Object.assign(AR,{'Story set':'سلسلة ستوري','Video scenes':'مشاهد الفيديو','Slide':'الشريحة','Cover':'الغلاف','Photo':'صورة','Message':'الرسالة','Contact':'التواصل','Thank you':'شكراً لكم','Save the set':'احفظ السلسلة',
+ 'A slide for the cover, each point, photo and message, and your contact at the end. Tap a slide to leave it out.':'شريحة للغلاف ولكل نقطة وصورة ورسالة، وبيانات التواصل في النهاية. اضغط على شريحة لاستبعادها.','Post them together as a story, or as one carousel post.':'انشرها معاً كستوري، أو كمنشور واحد متعدد الصور.'});
 
 /* ---------- colours: more ready-made shades, any colour you pick, your recent colours remembered, and the colour stays when you change the background ---------- */
 const PSLOT=160,CMAX=48;
