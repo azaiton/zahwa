@@ -4783,7 +4783,7 @@ const brRow=()=>[h('button',{class:'mrow2',onclick:brandSheet},h('span',{class:'
 
 /* the screens: a shop section on the home page, no party for a promo, a caption built for posting */
 CATS.unshift(['For your shop',SHOP]);
-{const v0=vHome;vHome=function(app){v0(app);const h2=[...app.querySelectorAll('h2')].find(q=>q.textContent.includes(T('For your shop')));if(!h2)return;
+{const v0=vHome;vHome=function(app){v0(app);const h2=[...app.querySelectorAll('h2')].find(q=>[T('For your shop'),T('For your page or shop')].some(s=>q.textContent.includes(s)));if(!h2)return;
  h2.after(h('button',{class:'mrow2 shb',onclick:brandSheet},h('span',{class:'mi'},ic('store')),h('span',{},h('b',{},brHas()?(brS('name')||T('My shop')):T('Set up my shop')),h('small',{},T(brHas()?'Your name, logo and contact are added to every design. Tap to change.':'Add your logo and contact once. They appear on every post, story and video.'))),h('span',{class:'chev'},'›')));};}
 {const v0=vStudio;vStudio=function(app){const sp=isShop();if(sp&&P.mode==='party')P.mode='image';v0(app);if(!sp)return;const sg=app.querySelector('.stm .seg');if(sg&&sg.children[2])sg.children[2].remove();
  const tl=app.querySelectorAll('.tools .tl'),pi=STOOLS.findIndex(q=>q[0]==='party');if(tl[pi])tl[pi].replaceWith(h('button',{class:'tl',onclick:brandSheet},h('span',{class:'tli'},ic('store')),T('My shop')));
