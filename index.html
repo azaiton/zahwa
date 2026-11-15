@@ -1542,7 +1542,7 @@ const DSP=p=>({occ:p.occ,name:p.name,name2:p.name2,age:p.age,years:p.years,g:p.g
 const fmtT=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
 const pname=d=>d.name?(d.name2?d.name+' & '+d.name2:d.name):L2((OCC.find(o=>o.id===d.occ)||OCC[0]).n);
 let musName=()=>P.music==='own'?(P.musName||T('My music')):P.music==='none'?T('No music'):L2((TUNES.find(x=>x.id===P.music)||TUNES[1]).n);
-async function projSave(){if(!P.occ)return;if(!P.id)P.id=rid();const d=JSON.parse(JSON.stringify(P));await dset('p:'+P.id,d);await dset('proj',d);PL=[{id:P.id,d},...PL.filter(x=>x.id!==P.id)].slice(0,24);dset('plist',PL.map(x=>x.id));}
+async function projSave(){if(!P.occ)return;if(!P.id)P.id=rid();const d=JSON.parse(JSON.stringify(P));await dset('p:'+P.id,d);await dset('proj',d);PL=[{id:P.id,d},...PL.filter(x=>x.id!==P.id)].slice(0,60);dset('plist',PL.map(x=>x.id));}
 async function projLoad(){const ids=(await dget('plist'))||[];PL=[];for(const id of ids){const d=await dget('p:'+id);if(d)PL.push({id,d});}}
 async function projOpen(x){P=Object.assign(blank(),JSON.parse(JSON.stringify(x.d)),{lang:P.lang});for(const id of [...P.photos,P.face,P.face2].filter(Boolean))if(!IMG[id]){const b=await dget('ph:'+id);if(b)try{IMG[id]=await loadImg(b);URLS[id]=IMG[id].src;}catch(e){}}VIEW='done';DIRTY=1;save();render();scrollTo(0,0);}
 function projDel(x){PL=PL.filter(y=>y.id!==x.id);ddel('p:'+x.id);dset('plist',PL.map(y=>y.id));if(P.id===x.id){P=Object.assign(blank(),{lang:P.lang});dset('proj',P);}render();}
@@ -5443,6 +5443,27 @@ document.head.append(h('style',{},'.mnb{display:flex;gap:4px}.mns input{font-wei
 Object.assign(AR,{'Title':'العنوان','Note under the title (optional)':'ملاحظة تحت العنوان (اختياري)','Sections, items and prices':'الأقسام والأصناف والأسعار','Section name':'اسم القسم','Text line, such as flavours or a note':'سطر نصي، مثل النكهات أو ملاحظة','Add a text line':'أضف سطراً نصياً','Numbers':'الأرقام','As typed':'كما كُتبت','More options':'خيارات إضافية','Short description (optional)':'وصف قصير (اختياري)','No label':'بدون شارة','Add a section':'أضف قسماً','Delivery prices':'أسعار التوصيل','The list is full':'القائمة ممتلئة',
  'This simple design shows up to 8 items and no sections. Choose a menu design in Design for the full list.':'هذا التصميم البسيط يعرض حتى 8 أصناف بدون أقسام. اختر تصميم قائمة من «التصميم» لعرض القائمة كاملة.','Sizes (optional)':'الأحجام (اختياري)','Write each price as 10 / 15 / 20, one for each size.':'اكتب كل سعر هكذا: 10 / 15 / 20، سعر لكل حجم.','Add the currency to each price':'أضف العملة إلى كل سعر',
  'Order policy':'شروط الطلب','One rule per line':'شرط واحد في كل سطر','Policy title':'عنوان الشروط','Prices valid until (optional)':'الأسعار سارية حتى (اختياري)','Text size':'حجم النص','Large':'كبير','Normal':'عادي','Compact':'مضغوط','Columns':'الأعمدة','Long lists':'القوائم الطويلة','Several pages':'عدة صفحات','Fit on one page':'صفحة واحدة','Page shown':'الصفحة المعروضة','Save all pages as images':'حفظ كل الصفحات كصور','Video shows the pages one after another.':'الفيديو يعرض الصفحات واحدة تلو الأخرى.'});
+
+/* ---------- My creations: make a copy of a post to change it, and show how much space the posts use ---------- */
+const PMAX=60;
+async function projDup(x){const d=JSON.parse(JSON.stringify(x.d));d.id=rid();delete d.src;await dset('p:'+d.id,d);
+ const i=PL.findIndex(y=>y.id===x.id);PL.splice(i<0?0:i,0,{id:d.id,d});if(PL.length>PMAX)PL.length=PMAX;await dset('plist',PL.map(y=>y.id));
+ await projOpen({id:d.id,d});toast(T('Copy made. Change this one, the original stays as it was.'));}
+const fmtMB=b=>{const m=b/1048576;return '⁦'+(m>=1024?(m/1024).toFixed(1)+' GB':(m<10?m.toFixed(1):Math.round(m))+' MB')+'⁩';};
+async function storeLine(el){try{if(!navigator.storage||!navigator.storage.estimate)return;const e=await navigator.storage.estimate(),u=e.usage||0,q=e.quota||0;
+ const fill=q?u/q:0,bar=h('i',{style:`inset-inline-end:${Math.max(0,100-Math.max(2,fill*100)).toFixed(1)}%`});
+ el.replaceChildren(h('div',{class:'stl'},h('span',{},T('Space used')+': '+fmtMB(u)+(q?' '+T('of')+' '+fmtMB(q):'')),h('span',{},PL.length+' '+T('of')+' '+PMAX+' '+T('posts'))),h('div',{class:'stb'+(fill>.8?' full':'')},bar));
+ if(fill>.8||PL.length>=PMAX-4)el.append(h('small',{class:'stw'},T('Space is running low. Save the posts you want to keep as files, then delete them here.')));}catch(e){}}
+{const l0=vList;vList=function(app){l0(app);if(PL.length){const top=app.querySelector('.top2'),box=h('div',{class:'stx'});(top&&top.nextSibling?top.nextSibling:top||app.firstChild).after(box);storeLine(box);}
+ app.querySelectorAll('.tc.pr').forEach((card,i)=>{const x=PL[i];if(!x)return;const b=h('button',{class:'dup','aria-label':T('Make a copy'),title:T('Make a copy'),onclick:()=>projDup(x)});
+  b.innerHTML='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>';card.append(b);});};}
+document.head.append(Object.assign(document.createElement('style'),{textContent:
+ '.dup{position:absolute;top:44px;inset-inline-end:6px;width:32px;height:32px;border-radius:50%;background:var(--veil);color:#fff;display:flex;align-items:center;justify-content:center;padding:0}'+
+ '.stx{margin:2px 0 14px}.stl{display:flex;justify-content:space-between;gap:10px;font-size:13px;opacity:.75;margin-bottom:6px}'+
+ '.stb{position:relative;height:6px;border-radius:3px;background:color-mix(in srgb,currentColor 12%,transparent);overflow:hidden}.stb i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:3px;background:var(--acc,#c8a24a)}.stb.full i{background:#e5484d}'+
+ '.stw{display:block;margin-top:8px;color:#e5484d}'}));
+Object.assign(AR,{'Make a copy':'إنشاء نسخة','Copy made. Change this one, the original stays as it was.':'تم إنشاء نسخة. عدّل هذه، ويبقى الأصل كما هو.','Space used':'المساحة المستخدمة','of':'من','posts':'منشور',
+ 'Space is running low. Save the posts you want to keep as files, then delete them here.':'المساحة تكاد تمتلئ. احفظ المنشورات التي تريدها كملفات، ثم احذفها من هنا.'});
 
 /* ---------- choosing an option keeps the list where it was: the panel, its sideways rows and the page do not jump back to the start ---------- */
 let KSD=0;
