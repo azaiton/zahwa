@@ -1764,7 +1764,7 @@ function tpls(id){const o=OCC.find(x=>x.id===id),k=P.lang==='ar'?1:0,s=SAMP[id]|
 function thFix(T_){const a=ARTS[P.art];if(a){const i=(P.pal||0)%a.pals.length,k='art|'+P.art+'|'+i+'|'+(P.font||'');if(!TFX[k]){const p=a.pals[i];TFX[k]={id:'art-'+P.art,n:a.n,g:p.g,ink:p.ink,acc:p.acc,shc:p.lite?LT:undefined,bk:p.lite?'#ffffff':'#2b1b3d',p:{k:'star',n:1},f:P.font||a.f||'elegant',c:p.x};}return TFX[k];}
  const old=T_.shc&&OLDW.includes(P.world),f=P.font;if(!old&&!f)return T_;const k=T_.id+'|'+(old?1:0)+'|'+(f||'');return TFX[k]||(TFX[k]=Object.assign({},T_,old?{ink:'#ffffff',acc:'#ffe08a',shc:undefined,bk:'#2b1b3d'}:{},f?{f}:{}));}
 {const b1=bg;bg=function(c,W,H,t,T_){const a=ARTS[P.art];if(!a)return b1(c,W,H,t,T_);const p=a.pals[(P.pal||0)%a.pals.length];c.save();a.draw(c,W,H,t,p);c.restore();if(onShow(c)){const now=performance.now(),dt=Math.min(.05,Math.max(0,(now-WS.last)/1000));WS.last=now;wUse(c,W,H,t);BW.tick(dt,beat()*.25);if(!p.lite)BW.aurora(.5);}if(!avOn())glitter(c,W,H,t,T_);};}
-{const s2=PANEL.style;PANEL.style=()=>{const a=s2(),A=ARTS[P.art];a.unshift(fld(T('Art background'),h('div',{class:'row',style:'justify-content:flex-start'},[['',T('None (use a scene)')],...Object.keys(ARTS).map(k=>[k,L2(ARTS[k].n)])].map(([v,l])=>h('button',{class:'chip'+((P.art||'')===v?' on':''),onclick:()=>{P.art=v;P.pal=0;ch();}},l))),T('Art backgrounds have their own colours. Scenes use the colour themes below.')),
+{const s2=PANEL.style;PANEL.style=()=>{const a=s2(),A=ARTS[P.art];a.unshift(fld(T('Art background'),h('div',{class:'row',style:'justify-content:flex-start'},[['',T('None (use a scene)')],...Object.keys(ARTS).map(k=>[k,L2(ARTS[k].n)])].map(([v,l])=>h('button',{class:'chip'+((P.art||'')===v?' on':''),onclick:()=>{P.pal=typeof palCarry==='function'?palCarry(v):0;P.art=v;ch();}},l))),T('Art backgrounds have their own colours. Scenes use the colour themes below.')),
   A&&fld(T('Colours'),palRow()));return a;};}
 
 /* ---------- design gallery: two columns with filters, so many designs can be compared at once ---------- */
@@ -4939,7 +4939,7 @@ function czLayouts(){const nm=k=>L2(LNAME[k]||[k,k]);if(isShop()){const u=[];(SH
  if(sLay()||P.photos.length){const u=[];CLT.forEach(d=>{if(!u.includes(d[2]))u.push(d[2]);});u.forEach(k=>L.push([k,nm(k)]));}return L;}
 function czPanel(){const A=ARTS[P.art],s=sLay(),ar=P.lang==='ar',key=ar?'fontAr':'fontEn',list=ar?FAR:FEN,LL=czLayouts(),lb=t=>h('div',{class:'lbl'},t),chips=(L,cur,set)=>h('div',{class:'row scroll'},L.map(([v,l])=>h('button',{class:'chip'+(cur===v?' on':''),onclick:()=>{set(v);ch();}},l)));
  return[h('div',{class:'czh'},T('Customise this design')),
-  lb(T('Background')),chips([!s&&['',T('None (use a scene)')],...Object.keys(ARTS).map(k=>[k,L2(ARTS[k].n)])].filter(Boolean),P.art||'',v=>{P.art=v;P.pal=0;}),
+  lb(T('Background')),chips([!s&&['',T('None (use a scene)')],...Object.keys(ARTS).map(k=>[k,L2(ARTS[k].n)])].filter(Boolean),P.art||'',v=>{P.pal=typeof palCarry==='function'?palCarry(v):0;P.art=v;}),
   A&&A.pals.length>1&&[lb(T('Colours')),palRow()],
   LL.length>1&&[lb(T('Layout')),chips(LL,P.layout,v=>{P.layout=v;})],
   lb(T('Font')),h('div',{class:'row scroll'},h('button',{class:'fchip'+(!P[key]?' on':''),onclick:()=>{P[key]='';ch();}},T('Automatic')),list.map(n=>h('button',{class:'fchip'+(P[key]===n?' on':''),style:`font-family:'${n}',var(--body)`,onclick:()=>{P[key]=n;ch();}},ar?'مبروك':'Hello',h('small',{},n)))),
@@ -5464,6 +5464,143 @@ document.head.append(Object.assign(document.createElement('style'),{textContent:
  '.stw{display:block;margin-top:8px;color:#e5484d}'}));
 Object.assign(AR,{'Make a copy':'إنشاء نسخة','Copy made. Change this one, the original stays as it was.':'تم إنشاء نسخة. عدّل هذه، ويبقى الأصل كما هو.','Space used':'المساحة المستخدمة','of':'من','posts':'منشور',
  'Space is running low. Save the posts you want to keep as files, then delete them here.':'المساحة تكاد تمتلئ. احفظ المنشورات التي تريدها كملفات، ثم احذفها من هنا.'});
+
+/* ---------- premium library: seven luxury backgrounds, company greetings, and new seasonal and national days ---------- */
+const gold=(c,x0,y0,x1,y1,a)=>{const g=c.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,mixH(a,'#000000',.38));g.addColorStop(.28,a);g.addColorStop(.5,mixH(a,'#ffffff',.62));g.addColorStop(.72,a);g.addColorStop(1,mixH(a,'#000000',.38));return g;};
+function twk(c,x,y,r,col,a){if(a<=.02)return;c.save();c.globalAlpha=a;c.fillStyle=col;c.beginPath();c.moveTo(x,y-r);c.quadraticCurveTo(x,y,x+r,y);c.quadraticCurveTo(x,y,x,y+r);c.quadraticCurveTo(x,y,x-r,y);c.quadraticCurveTo(x,y,x,y-r);c.fill();c.restore();}
+/* a short rule with a diamond in the middle */
+function ornD(c,x,y,w,m,st){c.save();c.strokeStyle=st;c.fillStyle=st;c.lineWidth=m*.0028;c.beginPath();c.moveTo(x-w,y);c.lineTo(x-m*.022,y);c.moveTo(x+m*.022,y);c.lineTo(x+w,y);c.stroke();c.beginPath();c.moveTo(x,y-m*.013);c.lineTo(x+m*.013,y);c.lineTo(x,y+m*.013);c.lineTo(x-m*.013,y);c.closePath();c.fill();
+ c.beginPath();c.arc(x-w,y,m*.004,0,7);c.arc(x+w,y,m*.004,0,7);c.fill();c.restore();}
+function vign(c,W,H,lite,k){const m=Math.min(W,H),g=c.createRadialGradient(W/2,H*.46,m*.25,W/2,H/2,Math.hypot(W,H)*.62);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,lite?`rgba(110,80,40,${.1*(k||1)})`:`rgba(0,0,0,${.42*(k||1)})`);c.fillStyle=g;c.fillRect(0,0,W,H);}
+/* a flowing band between two waves */
+function band(c,W,y0,amp,th,ph,dir){c.beginPath();for(let i=0;i<=40;i++){const x=W*i/40,u=i/40;c.lineTo(x,y0+Math.sin(u*Math.PI*1.3+ph)*amp+dir*u*amp*.6);}for(let i=40;i>=0;i--){const x=W*i/40,u=i/40;c.lineTo(x,y0+Math.sin(u*Math.PI*1.3+ph+.35)*amp+dir*u*amp*.6+th*(.55+.45*Math.sin(u*3+ph)));}c.closePath();}
+Object.assign(ARTS,{
+gilded:{n:['Gilded frame','إطار مذهّب'],f:'elegant',pals:[AP(['#062a20','#0b4031','#05241b'],'#fbf3dc','#e2c06b',0),AP(['#0a1530','#14275a','#081127'],'#f6f0e0','#e8c56b',0),AP(['#2b0614','#4d0d24','#25040f'],'#fdeee6','#e9bd6f',0),AP(['#fbf7ee','#f4ead6','#fbf7ee'],'#3a2d1c','#a8822f',1),AP(['#0d0d0f','#1b1b1f','#0b0b0d'],'#f6efdf','#dcb661',0)],
+ draw(c,W,H,t,p){vg(c,W,H,p.g);vign(c,W,H,p.lite);const m=Math.min(W,H),gd=gold(c,0,0,W,H,p.acc),o1=m*.05,o2=m*.072;c.strokeStyle=gd;c.lineWidth=m*.007;c.strokeRect(o1,o1,W-2*o1,H-2*o1);c.lineWidth=m*.0022;c.strokeRect(o2,o2,W-2*o2,H-2*o2);
+  [[0,0],[1,0],[0,1],[1,1]].forEach(([sx,sy])=>{c.save();c.translate(sx?W-o2:o2,sy?H-o2:o2);c.scale(sx?-1:1,sy?-1:1);c.strokeStyle=gd;c.fillStyle=gd;c.lineWidth=m*.003;
+   c.beginPath();c.arc(0,0,m*.075,0,Math.PI/2);c.stroke();c.beginPath();c.arc(0,0,m*.05,0,Math.PI/2);c.stroke();
+   c.beginPath();c.moveTo(m*.075,0);c.bezierCurveTo(m*.12,0,m*.135,m*.028,m*.112,m*.04);c.bezierCurveTo(m*.098,m*.047,m*.09,m*.034,m*.1,m*.027);c.stroke();
+   c.beginPath();c.moveTo(0,m*.075);c.bezierCurveTo(0,m*.12,m*.028,m*.135,m*.04,m*.112);c.bezierCurveTo(m*.047,m*.098,m*.034,m*.09,m*.027,m*.1);c.stroke();
+   c.save();c.rotate(Math.PI/4);c.translate(m*.088,0);c.rotate(Math.PI/4);c.fillRect(-m*.009,-m*.009,m*.018,m*.018);c.restore();c.beginPath();c.arc(m*.022,m*.022,m*.006,0,7);c.fill();c.restore();});
+  ornD(c,W/2,o2+m*.04,m*.13,m,gd);ornD(c,W/2,H-o2-m*.04,m*.13,m,gd);
+  for(let i=0;i<16;i++){const side=i%4,u=R(i,701),x=side<2?W*(.1+.8*u):(side===2?o1:W-o1),y=side<2?(side?H-o1:o1):H*(.1+.8*u);twk(c,x,y,m*(.012+.012*R(i,702)),p.lite?mixH(p.acc,'#ffffff',.3):'#fff6d8',Math.pow(Math.max(0,Math.sin(t*1.1+i*1.9)),6)*.95);}}},
+velvet:{n:['Velvet','مخمل'],f:'elegant',pals:[AP(['#180619','#4a1550','#12041a'],'#fff3e8','#f0c674',0,['#ffffff']),AP(['#040b20','#123a7a','#030818'],'#f2f6ff','#e6c56b',0,['#ffffff']),AP(['#1c030a','#5e0f23','#160208'],'#ffeef0','#f3c27a',0,['#ffffff']),AP(['#efe2cf','#fffaf3','#ead9c2'],'#3d2a1a','#a8742a',1,['#ffffff']),AP(['#f1d3d9','#fff6f7','#ecc8d0'],'#4a1d2a','#b03e64',1,['#ffffff'])],
+ draw(c,W,H,t,p){const m=Math.min(W,H),bg=c.createRadialGradient(W*.5,H*.42,0,W*.5,H*.45,Math.hypot(W,H)*.62);bg.addColorStop(0,p.g[1]);bg.addColorStop(.6,mixH(p.g[1],p.g[0],.65));bg.addColorStop(1,p.g[2]);c.fillStyle=bg;c.fillRect(0,0,W,H);
+  c.save();for(let k=0;k<5;k++){const bw=m*(.16+.08*R(k,711));c.save();c.translate(W*(-.1+.3*k)+Math.sin(t*.25+k*1.3)*m*.05,H/2);c.rotate(-.55);const g=c.createLinearGradient(-bw,0,bw,0),a=p.lite?.5:.075;g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.5,`rgba(255,255,255,${a})`);g.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g;c.fillRect(-bw,-H*1.5,bw*2,H*3);
+   const s=c.createLinearGradient(bw,0,bw*2.4,0);s.addColorStop(0,'rgba(0,0,0,0)');s.addColorStop(.5,`rgba(0,0,0,${p.lite?.05:.16})`);s.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=s;c.fillRect(bw,-H*1.5,bw*1.4,H*3);c.restore();}c.restore();vign(c,W,H,p.lite,.8);
+  const gd=gold(c,0,0,W,H,p.acc);ornD(c,W/2,m*.08,m*.16,m,gd);ornD(c,W/2,H-m*.08,m*.16,m,gd);
+  for(let i=0;i<34;i++){const u=(R(i,712)+t*(.01+.015*R(i,713)))%1,x=W*R(i,714)+Math.sin(t*.6+i)*m*.015,y=H*(1.05-u*1.1);c.fillStyle=hexA(p.lite?p.acc:mixH(p.acc,'#ffffff',.4),(p.lite?.55:.7)*Math.sin(u*Math.PI)*(.5+.5*Math.sin(t*2+i)));c.beginPath();c.arc(x,y,m*(.0025+.004*R(i,715)),0,7);c.fill();}}},
+lattice:{n:['Gold lattice','نقش ذهبي'],f:'elegant',pals:[AP(['#03282a','#08403f','#03282a'],'#fdf6e3','#e2c06b',0),AP(['#0a0e26','#18204f','#0a0e26'],'#f5f1e6','#e6c56b',0),AP(['#f9f4ea','#f2e8d5','#f9f4ea'],'#2f2618','#a07a2e',1),AP(['#2a0b10','#4a1219','#2a0b10'],'#fcefe4','#e8b96a',0),AP(['#eef4f1','#ddeae4','#eef4f1'],'#123329','#2f7d62',1)],
+ draw(c,W,H,t,p){vg(c,W,H,p.g);const m=Math.min(W,H),s=m*.17,r=s*.34,gd=gold(c,0,0,W,H,p.acc),D=Math.hypot(W,H)/2;c.save();c.strokeStyle=gd;c.lineWidth=m*.0024;
+  for(let y=-s/2,j=0;y<H+s;y+=s,j++)for(let x=-s/2+(W/2%s),i=0;x<W+s;x+=s,i++){const d=Math.hypot(x-W/2,y-H*.47)/D,a=Math.max(0,Math.min(1,(d-.24)/.42))*(p.lite?.75:.7)*(.82+.18*Math.sin(t*.7+i*.9+j*1.3));if(a<.03)continue;c.globalAlpha=a;
+   c.beginPath();c.rect(x-r,y-r,r*2,r*2);c.stroke();c.save();c.translate(x,y);c.rotate(Math.PI/4);c.beginPath();c.rect(-r,-r,r*2,r*2);c.stroke();c.restore();c.beginPath();c.arc(x,y,r*.38,0,7);c.stroke();
+   c.beginPath();const q=r*1.414;c.moveTo(x+q,y);c.lineTo(x+s/2,y);c.moveTo(x-q,y);c.lineTo(x-s/2,y);c.moveTo(x,y+q);c.lineTo(x,y+s/2);c.moveTo(x,y-q);c.lineTo(x,y-s/2);c.stroke();}c.restore();
+  const g=c.createRadialGradient(W/2,H*.47,0,W/2,H*.47,m*.55);g.addColorStop(0,hexA(p.g[1],.85));g.addColorStop(1,hexA(p.g[1],0));c.fillStyle=g;c.fillRect(0,0,W,H);vign(c,W,H,p.lite,.6);}},
+editorial:{n:['Luxury minimal','فخامة بسيطة'],f:'elegant',pals:[AP(['#f6f2ea','#f6f2ea','#f6f2ea'],'#1b1a17','#a8834e',1),AP(['#111111','#141414','#111111'],'#f3efe6','#c9a96e',0),AP(['#eceee6','#eceee6','#eceee6'],'#22302a','#5f7a55',1),AP(['#0f1a2b','#122036','#0f1a2b'],'#f1ece2','#c8a26a',0),AP(['#f3e9e4','#f3e9e4','#f3e9e4'],'#3a2422','#b4656f',1)],
+ draw(c,W,H,t,p){vg(c,W,H,p.g);const m=Math.min(W,H);for(let i=0;i<260;i++){c.fillStyle=hexA(p.lite?'#000000':'#ffffff',.035);c.fillRect(W*R(i,721),H*R(i,722),m*.002,m*.002);}
+  c.save();c.globalAlpha=p.lite?.16:.2;c.strokeStyle=p.acc;c.lineWidth=m*.0025;const br=m*(.4+.015*Math.sin(t*.5));c.beginPath();c.arc(W*1.04,H*1.02,br,0,7);c.stroke();c.beginPath();c.arc(W*1.04,H*1.02,br*.84,0,7);c.stroke();c.restore();
+  const o=m*.05;c.strokeStyle=hexA(p.ink,.32);c.lineWidth=m*.0016;c.strokeRect(o,o,W-2*o,H-2*o);
+  c.fillStyle=p.acc;c.beginPath();c.arc(W/2,o+m*.07,m*.022,0,7);c.fill();c.strokeStyle=hexA(p.acc,.9);c.lineWidth=m*.002;c.beginPath();c.moveTo(W/2-m*.16,o+m*.07);c.lineTo(W/2-m*.04,o+m*.07);c.moveTo(W/2+m*.04,o+m*.07);c.lineTo(W/2+m*.16,o+m*.07);c.stroke();
+  c.beginPath();c.arc(W/2,o+m*.07,m*.034+m*.004*Math.sin(t*1.2),0,7);c.stroke();}},
+corporate:{n:['Corporate','شركات'],f:'clean',pals:[AP(['#f7f9fc','#eef3fa','#f7f9fc'],'#0f1f3d','#1d4ed8',1,['#1d4ed8','#0ea5e9','#0f1f3d']),AP(['#0f172a','#111c33','#0f172a'],'#f8fafc','#38bdf8',0,['#2563eb','#38bdf8','#e2e8f0']),AP(['#f6faf8','#ecf5f0','#f6faf8'],'#0b2e24','#059669',1,['#059669','#a3c9b8','#0b2e24']),AP(['#fbf7f7','#f5ecec','#fbf7f7'],'#3b0d17','#9f1239',1,['#9f1239','#e3b5bf','#3b0d17']),AP(['#0b0b0c','#141416','#0b0b0c'],'#f5f1e8','#d4af37',0,['#d4af37','#5c5c66','#f5f1e8'])],
+ draw(c,W,H,t,p){vg(c,W,H,p.g);const m=Math.min(W,H),sx=Math.sin(t*.4)*m*.012;
+  c.fillStyle=p.x[0];c.beginPath();c.moveTo(0,H-m*.36+sx);c.lineTo(m*.6+sx,H);c.lineTo(0,H);c.fill();c.fillStyle=hexA(p.x[1],.9);c.beginPath();c.moveTo(0,H-m*.22-sx);c.lineTo(m*.86-sx,H);c.lineTo(m*.62,H);c.lineTo(0,H-m*.08);c.fill();
+  c.fillStyle=p.x[2];c.globalAlpha=p.lite?.92:.85;c.beginPath();c.moveTo(W-m*.42-sx,0);c.lineTo(W,0);c.lineTo(W,m*.2+sx);c.fill();c.globalAlpha=1;
+  c.strokeStyle=hexA(p.x[0],.7);c.lineWidth=m*.004;for(let k=0;k<3;k++){const d=m*(.48+k*.045);c.beginPath();c.moveTo(W-d-sx,0);c.lineTo(W,d*.476+sx);c.stroke();}
+  c.fillStyle=hexA(p.ink,p.lite?.22:.3);for(let i=0;i<6;i++)for(let j=0;j<4;j++){c.beginPath();c.arc(m*.07+i*m*.032,m*.075+j*m*.032,m*.0045,0,7);c.fill();}
+  c.fillStyle=p.acc;c.fillRect(W-m*.07-m*.14,H-m*.07,m*.14,m*.008);}},
+foil:{n:['Liquid gold','ذهب سائل'],f:'elegant',pals:[AP(['#0a0a0b','#161618','#0a0a0b'],'#f6efdf','#e3bf6a',0),AP(['#032019','#06362a','#032019'],'#f4f1e6','#e2c06b',0),AP(['#0a1228','#122047','#0a1228'],'#f1f3fa','#e6c56b',0),AP(['#fbfaf7','#f2efe9','#fbfaf7'],'#2b2620','#b48a3c',1),AP(['#fbf3f1','#f4e4e0','#fbf3f1'],'#4a2a2a','#b76e79',1)],
+ draw(c,W,H,t,p){vg(c,W,H,p.g);vign(c,W,H,p.lite,.7);const m=Math.min(W,H);c.save();
+  [[H*.02,1,-1],[H*.92,-1,1]].forEach(([y0,dir,s],gi)=>{for(let k=0;k<3;k++){const ph=t*.35+k*.9+gi*2;c.globalAlpha=[1,.55,.3][k];c.fillStyle=gold(c,0,y0-m*.1,W,y0+m*.15,p.acc);band(c,W,y0+k*m*.035*dir,m*.07,m*(.05-.012*k)*s,ph,dir);c.fill();}});c.restore();
+  for(let i=0;i<14;i++){const top=i%2===0,x=W*R(i,731),y=top?H*(.03+.12*R(i,732)):H*(.85+.12*R(i,732));twk(c,x,y,m*(.01+.012*R(i,733)),p.lite?'#ffffff':'#fff4cf',Math.pow(Math.max(0,Math.sin(t*1.2+i*2.3)),5));}}},
+nation:{n:['National ribbons','شرائط وطنية'],f:'bold',fixed:1,pals:[AP(['#ffffff','#f5f5f0','#ffffff'],'#111111','#ce1126',1,['#111111','#ffffff','#007a3d','#ce1126']),AP(['#0b0b0b','#161616','#0b0b0b'],'#ffffff','#e8c56b',0,['#111111','#ffffff','#007a3d','#ce1126']),AP(['#00341b','#00532b','#00341b'],'#ffffff','#ffffff',0,['#111111','#ffffff','#007a3d','#ce1126'])],
+ draw(c,W,H,t,p){vg(c,W,H,p.g);const m=Math.min(W,H),bh=m*.05,y0=H-bh*3.6,ph=t*.8;
+  const wave=(yy,dy)=>{c.beginPath();for(let i=0;i<=40;i++){const u=i/40;c.lineTo(W*u,yy+Math.sin(u*5-ph)*m*.018*u);}for(let i=40;i>=0;i--){const u=i/40;c.lineTo(W*u,yy+dy+Math.sin(u*5-ph)*m*.018*u);}c.closePath();};
+  [p.x[0],p.x[1],p.x[2]].forEach((col,k)=>{c.fillStyle=col;wave(y0+k*bh,bh+1);c.fill();});if(p.lite){c.strokeStyle='rgba(0,0,0,.12)';c.lineWidth=1;wave(y0+bh,bh);c.stroke();}
+  c.fillStyle=p.x[3];c.beginPath();c.moveTo(0,y0);c.lineTo(bh*3.4,y0+bh*1.5);c.lineTo(0,y0+bh*3);c.closePath();c.fill();
+  const sx=bh*1.15,sy=y0+bh*1.5,ro=bh*.42,ri=ro*.48;c.fillStyle='#ffffff';c.beginPath();for(let i=0;i<14;i++){const a=-Math.PI/2+i*Math.PI/7,rr=i%2?ri:ro;c.lineTo(sx+Math.cos(a)*rr,sy+Math.sin(a)*rr);}c.fill();
+  [p.x[0],p.x[1],p.x[2]].forEach((col,k)=>{c.fillStyle=col;c.fillRect(0,m*.035+k*m*.012,W,m*.012);});if(p.lite){c.strokeStyle='rgba(0,0,0,.12)';c.strokeRect(0,m*.047,W,m*.012);}
+  for(let i=0;i<10;i++){const x=W*R(i,741),y=H*(.15+.55*R(i,742));twk(c,x,y,m*(.008+.01*R(i,743)),p.lite?p.x[3]:'#ffffff',.35*Math.pow(Math.max(0,Math.sin(t+i*2.1)),4));}}}
+});
+/* the new backgrounds also come in every colour, like the others (the national one keeps its colours) */
+['gilded','velvet','lattice','editorial','corporate','foil','nation'].forEach(k=>{const A=ARTS[k];if(A.n0)return;A.n0=A.pals.length;if(A.fixed)return;const own=A.pals.slice(),bases=[own.find(p=>p.lite),own.find(p=>!p.lite)].filter(Boolean);
+ bases.forEach(b=>HUES.forEach(H=>{if(own.some(p=>!!p.lite===!!b.lite&&m2hex(p.acc)&&c2hsl(p.acc)[1]>.2&&hueD(c2hsl(p.acc)[0],H)<18&&m2hex(p.g[1])&&(c2hsl(p.g[1])[1]<.06||hueD(c2hsl(p.g[1])[0],H)<40)))return;try{A.pals.push(palTint(b,H));}catch(e){}}));});
+['gilded','lattice','editorial','corporate'].forEach(k=>ARTS[k].box=0);
+
+/* ---------- new occasions ---------- */
+const BIZ=['cgreet','opening','welcometeam','promotion','empmonth','companyanniv','holiday'];
+OCC.push(
+{id:'cgreet',e:'🏢',n:['Company greeting','تهنئة من الشركة'],f:'name',th:['ivory','gala','emerald','mono'],mu:'waltz',h:['Season’s greetings','كل عام وأنتم بخير'],w:[["Wishing you and your families a blessed season, with our sincere thanks for your trust.","Warm wishes to our clients and partners. May the year ahead bring you joy and success.","With gratitude for your trust, we wish you happiness and peace."],["نتقدّم إليكم وإلى عائلاتكم بأطيب التهاني، مع خالص الشكر لثقتكم الدائمة.","أطيب الأمنيات لعملائنا وشركائنا، وكل عام وأنتم بألف خير.","مع امتناننا لثقتكم، نتمنى لكم دوام الفرح والنجاح."]]},
+{id:'opening',e:'🎀',n:['Grand opening','افتتاح'],f:'name',th:['gala','confetti','ivory','sunset'],mu:'party',h:['Grand opening','افتتاح'],w:[["Our doors are open! Visit us and celebrate with us.","A new home for us, and a warm welcome for you. We can’t wait to see you.","Opening day is here. Come say hello and enjoy our opening offers."],["أبوابنا مفتوحة! زورونا وشاركونا الفرحة.","مكان جديد لنا، وترحيب أجمل بكم. بانتظاركم.","يوم الافتتاح وصل. زورونا واستمتعوا بعروض الافتتاح."]]},
+{id:'welcometeam',e:'🤝',n:['Welcome to the team','انضمام موظف'],f:'name',th:['ivory','mint','gala','mono'],mu:'joy',h:['Welcome to the team','أهلاً بك في فريقنا'],w:[["We’re delighted to welcome a new colleague. Wishing you every success with us.","A warm welcome to our newest team member. Great things ahead!","Happy to have you with us. Here’s to a bright journey together."],["يسعدنا انضمام زميل جديد إلى فريقنا، مع تمنياتنا بالتوفيق والنجاح.","أهلاً وسهلاً بأحدث أعضاء فريقنا. القادم أجمل!","سعداء بوجودكم معنا، ونتطلع إلى رحلة مليئة بالإنجاز."]]},
+{id:'promotion',e:'📈',n:['Promotion','ترقية'],f:'name',th:['gala','emerald','ivory','night'],mu:'joy',h:['Congratulations on your promotion','مبارك الترقية'],w:[["A well-deserved step forward. Congratulations, and continued success!","Your hard work has paid off. We’re proud of you.","Congratulations on the new role. Wishing you even greater achievements."],["خطوة مستحقة إلى الأمام. ألف مبروك ومزيداً من التقدّم!","جهدكم أثمر نجاحاً. نفخر بكم.","مبارك المنصب الجديد، مع تمنياتنا بمزيد من الإنجازات."]]},
+{id:'empmonth',e:'🏅',n:['Employee of the month','موظف الشهر'],f:'name',th:['gala','ivory','emerald','night'],mu:'joy',h:['Employee of the month','موظف الشهر'],w:[["For outstanding dedication and a smile that lifts the whole team. Thank you!","Your effort makes a difference every day. Well done!","Proud to celebrate excellence. Congratulations!"],["تقديراً للتفاني والعطاء والروح التي ترفع الفريق كله. شكراً لكم!","جهودكم تصنع الفرق كل يوم. أحسنتم!","نفخر بالاحتفاء بالتميّز. ألف مبروك!"]]},
+{id:'companyanniv',e:'🎖️',n:['Company anniversary','ذكرى التأسيس'],f:'name years',th:['gala','ivory','emerald','night'],mu:'waltz',h:['Celebrating our anniversary','نحتفل بذكرى تأسيسنا'],w:[["Thank you for being part of our story. Here’s to many more years together.","Years of trust, growth and good work, thanks to you.","Every milestone is yours too. Thank you for your trust."],["شكراً لأنكم جزء من قصتنا، وإلى سنوات قادمة أجمل معاً.","سنوات من الثقة والنمو والعمل المتقن، بفضلكم.","كل إنجاز هو لكم أيضاً. شكراً لثقتكم."]]},
+{id:'holiday',e:'📅',n:['Holiday notice','إعلان عطلة'],f:'name',th:['ivory','mono','mint','night'],mu:'tender',h:['Holiday notice','إعلان عطلة'],w:[["We’ll be closed for the holiday and back to serve you soon. Happy holidays!","Our branches are closed on the official holiday. Orders resume the next working day.","Taking a short break to celebrate. See you after the holiday!"],["نعتذر عن استقبال الطلبات خلال العطلة، ونعود لخدمتكم قريباً. كل عام وأنتم بخير!","تُغلق فروعنا خلال العطلة الرسمية، وتُستأنف الطلبات في أول يوم عمل.","استراحة قصيرة للاحتفال. نلقاكم بعد العطلة!"]]},
+{id:'mawlid',e:'🕌',n:['Prophet’s birthday','المولد النبوي'],f:'name',th:['lantern','emerald','gala','night'],mu:'east',h:['Mawlid an-Nabi','المولد النبوي الشريف'],w:[["Blessed Mawlid. May this day fill your heart and home with light.","Wishing you peace, mercy and blessings on the Prophet’s birthday.","May the light of this occasion stay with you all year."],["كل عام وأنتم بخير بمناسبة المولد النبوي الشريف.","أعاده الله علينا وعليكم بالخير واليُمن والبركات.","اللهم صلِّ وسلم على سيدنا محمد. مولد نبوي مبارك."]]},
+{id:'christmas',e:'🎄',n:['Christmas','عيد الميلاد المجيد'],f:'name',th:['gala','night','ivory','rose'],mu:'waltz',h:['Merry Christmas','ميلاد مجيد'],w:[["Wishing you a joyful Christmas and a bright new year.","Peace, love and warm moments with the ones you love.","May the season fill your home with light and joy."],["ميلاد مجيد وعام جديد مليء بالفرح.","سلام ومحبة ولحظات دافئة مع من تحبون.","كل عام وأنتم بخير، وأيامكم عامرة بالنور والفرح."]]},
+{id:'independence',e:'⭐',n:['Independence Day','عيد الاستقلال'],f:'name',th:['gala','emerald','ivory','night'],mu:'east',h:['Happy Independence Day','عيد استقلال سعيد'],w:[["Proud of our homeland. Happy Independence Day, Jordan!","Wishing our beloved country continued safety, pride and progress.","Celebrating the day with pride. Long live Jordan."],["كل عام والأردن بألف خير. عيد استقلال مجيد!","حمى الله الأردن، وأدام عليه الأمن والعزّ والازدهار.","نحتفل بفخر بعيد الاستقلال. عاش الأردن حراً عزيزاً."]]});
+Object.assign(SAMP,{welcometeam:{name:['Lina Haddad','لينا حداد']},promotion:{name:['Omar Khalil','عمر خليل']},empmonth:{name:['Rami Saleh','رامي صالح']},opening:{name:['Abdoun branch','فرع عبدون']},companyanniv:{name:['Nour Co.','شركة نور'],years:'10'}});
+Object.assign(OCCIC,{cgreet:'spark',opening:'store',welcometeam:'tie',promotion:'medal',empmonth:'trophy',companyanniv:'burst',holiday:'sun',mawlid:'lantern',christmas:'spark',independence:'medal'});
+Object.assign(OCCOL,{cgreet:'#1d4ed8',opening:'#e11d48',welcometeam:'#0ea5e9',promotion:'#7c3aed',empmonth:'#d97706',companyanniv:'#b45309',holiday:'#0d9488',mawlid:'#047857',christmas:'#b91c1c',independence:'#ce1126'});
+{const fi=CATS.findIndex(c=>c[0]==='Faith and seasons');(fi>=0?CATS[fi][1]:CATS[CATS.length-1][1]).push('mawlid','christmas','independence');const ki=CATS.findIndex(c=>c[0]==='Kind words');CATS.splice(ki>=0?ki:CATS.length,0,['Business and companies',BIZ.slice()]);}
+/* premium-only template sets; no cartoon scenes for business */
+ARTSET.corp=[['gilded',1,'classic','elegant'],['corporate',0,'min','clean'],['editorial',0,'classic','elegant'],['foil',0,'type','elegant'],['lattice',0,'min','elegant'],['velvet',1,'card',''],['corporate',1,'classic','modern'],['editorial',1,'min','elegant'],['gilded',3,'badge',''],['foil',3,'min','elegant'],['corporate',2,'type','modern'],['velvet',3,'min','elegant'],['gilded',4,'type','elegant'],['corporate',4,'min','clean'],['editorial',3,'classic','elegant'],['marble',0,'type',''],['lattice',2,'classic','elegant'],['silk',1,'min','']];
+ARTSET.xmas=[['velvet',2,'classic','elegant'],['gilded',2,'badge',''],['bokeh',0,'min','elegant'],['foil',0,'type','elegant'],['editorial',1,'min','elegant'],['starry',0,'classic',''],['velvet',4,'min','elegant'],['gilded',3,'classic','elegant'],['foil',4,'classic','elegant']];
+ARTSET.nation=[['nation',0,'classic','bold'],['nation',1,'classic','bold'],['nation',2,'min','bold'],['gilded',4,'classic','elegant'],['nation',0,'card','bold'],['corporate',4,'type','bold'],['nation',1,'min','bold'],['editorial',1,'min','elegant']];
+Object.assign(OCAT,{cgreet:'corp',opening:'corp',welcometeam:'corp',promotion:'corp',empmonth:'corp',companyanniv:'corp',holiday:'corp',christmas:'xmas',independence:'nation',mawlid:'faith'});
+['cgreet','opening','welcometeam','promotion','empmonth','companyanniv','holiday','christmas','independence'].forEach(k=>{TPLX[k]=[];});
+/* the luxury backgrounds lead every existing group too */
+{const add={soft:[['velvet',4,'min','elegant'],['gilded',3,'classic','elegant'],['foil',4,'classic','elegant'],['editorial',4,'min','elegant'],['velvet',0,'card','']],
+ formal:[['gilded',1,'classic','elegant'],['editorial',1,'min','elegant'],['foil',0,'type','elegant'],['corporate',0,'min','clean'],['lattice',1,'min','elegant']],
+ faith:[['lattice',0,'classic','elegant'],['gilded',0,'badge',''],['velvet',1,'min','elegant'],['lattice',2,'classic','elegant'],['foil',1,'type','elegant']],
+ festive:[['foil',0,'big','bold'],['velvet',0,'classic','elegant'],['gilded',2,'type','elegant']],baby:[['editorial',4,'min','elegant'],['velvet',4,'arc','elegant']]};
+ Object.keys(add).forEach(k=>{const old=ARTSET[k]||[],nw=add[k],out=[];for(let i=0;i<Math.max(old.length,nw.length);i++){if(i<nw.length)out.push(nw[i]);if(i<old.length)out.push(old[i]);}ARTSET[k]=out;});}
+/* company posts are signed by the company (the brand), not "with love, the family" */
+{const tp=tpls;tpls=function(id){const L=tp(id);if(BIZ.includes(id))L.forEach(d=>{d.from='';});return L;};}
+Object.assign(AR,{'Business and companies':'الشركات والأعمال'});
+/* calm styles stay clean: no sparkle overlay */
+['corporate','editorial'].forEach(k=>ARTS[k].calm=1);
+{const g0=glitter;glitter=function(c,W,H,t,T_){const A=ARTS[P.art];if(A&&A.calm)return;return g0(c,W,H,t,T_);};}
+/* Independence Day opens with the national designs */
+{const tp=tpls;tpls=function(id){const L=tp(id);if(id==='independence'){const a=L.filter(d=>d.art==='nation'),b=L.filter(d=>d.art!=='nation');return[...a,...b].map((d,i)=>Object.assign(d,{v:i}));}return L;};}
+
+/* ---------- colours: more ready-made shades, any colour you pick, your recent colours remembered, and the colour stays when you change the background ---------- */
+const PSLOT=160,CMAX=48;
+let MYC={s:[],r:[]};try{const o=JSON.parse(localStorage.getItem('zahwa-cols')||'null');if(o&&Array.isArray(o.s)&&Array.isArray(o.r))MYC={s:o.s.filter(x=>x&&m2hex(x.c)).slice(0,CMAX),r:o.r.filter(x=>x&&m2hex(x.c)).slice(0,12)};}catch(e){}
+const mycSave=()=>{try{localStorage.setItem('zahwa-cols',JSON.stringify(MYC));}catch(e){}};
+/* a palette for this background in the exact colour picked */
+function palMake(A,c,lite){const own=A.pals.slice(0,A.n0||A.pals.length),b=own.find(p=>!!p.lite===!!lite)||own[0],[H,S,Lc]=c2hsl(c),grey=S<.12;
+ const t=palTint(b,H);if(grey){const bgf=x=>{if(!m2hex(x))return x;const [h,s,l]=c2hsl(x);return hsl2c(H,s*.15,l);};t.g=b.g.map(bgf);t.ink=bgf(b.ink);t.x=Array.isArray(b.x)?b.x.map(bgf):b.x;}
+ const okL=lite?Math.min(Lc,.5):Math.max(Lc,.62);t.acc=Math.abs(okL-Lc)<.005?c:hsl2c(H,S,okL);t.lite=b.lite;t.my=1;return t;}
+/* more shades for every background (added after the existing ones so saved designs keep their colours) */
+Object.keys(ARTS).forEach(k=>{const A=ARTS[k];if(!A||!Array.isArray(A.pals)||A.nb)return;const own=A.pals.slice(0,A.n0||A.pals.length),bases=[own.find(p=>p.lite),own.find(p=>!p.lite)].filter(Boolean);
+ if(!A.fixed)bases.forEach(b=>[0,58,92,196,240,292,315].forEach(H=>{if(A.pals.some(p=>!!p.lite===!!b.lite&&m2hex(p.acc)&&c2hsl(p.acc)[1]>.2&&hueD(c2hsl(p.acc)[0],H)<14))return;try{A.pals.push(palTint(b,H));}catch(e){}}));
+ A.nb=Math.min(A.pals.length,PSLOT);A.pals.length=Math.min(A.pals.length,PSLOT);while(A.pals.length<PSLOT)A.pals.push(A.pals[0]);
+ MYC.s.forEach(s=>{try{A.pals.push(palMake(A,s.c,s.l));}catch(e){A.pals.push(A.pals[0]);}});});
+/* a picked colour gets a fixed place, so every saved design keeps it */
+function slotOf(c,l){c=c.toLowerCase();l=l?1:0;let i=MYC.s.findIndex(s=>s.c===c&&s.l===l);if(i>=0)return i;
+ if(MYC.s.length>=CMAX){const used=new Set();[P,...PL.map(x=>x.d)].forEach(d=>{if(d&&(d.pal||0)>=PSLOT)used.add(d.pal-PSLOT);});i=MYC.s.findIndex((s,j)=>!used.has(j)&&!MYC.r.some(r=>r.c===s.c&&r.l===s.l));if(i<0)return -1;MYC.s[i]={c,l};Object.keys(ARTS).forEach(k=>{const A=ARTS[k];if(A&&A.nb)A.pals[PSLOT+i]=palMake(A,c,l);});TC.clear();}
+ else{i=MYC.s.length;MYC.s.push({c,l});Object.keys(ARTS).forEach(k=>{const A=ARTS[k];if(A&&A.nb)A.pals.push(palMake(A,c,l));});}mycSave();return i;}
+/* the best palette for a colour on a background: a ready-made one if it matches, otherwise the picked colour itself */
+function palFor(art,c,l){const A=ARTS[art];if(!A||!A.nb)return 0;const H=c2hsl(c)[0];for(let i=0;i<A.nb;i++){const p=A.pals[i];if(!!p.lite===!!l&&m2hex(p.acc)&&p.acc.toLowerCase()===c.toLowerCase())return i;}
+ const i=slotOf(c,l);if(i>=0)return PSLOT+i;let best=0,bd=99;for(let j=0;j<A.nb;j++){const p=A.pals[j];if(!!p.lite!==!!l||!m2hex(p.acc))continue;const d=hueD(c2hsl(p.acc)[0],H);if(d<bd){bd=d;best=j;}}return best;}
+function palRemember(){const A=ARTS[P.art];if(!A)return;const p=A.pals[(P.pal||0)%A.pals.length];if(!p||!m2hex(p.acc))return;const e={c:p.acc.toLowerCase(),l:p.lite?1:0,bg:m2hex(p.g[1])?p.g[1]:p.g[0]};
+ MYC.r=[e,...MYC.r.filter(r=>!(r.c===e.c&&r.l===e.l))].slice(0,12);mycSave();}
+/* changing the background keeps the colour you chose */
+function palCarry(v){const A=ARTS[P.art],pi=P.pal||0;if(!A||!ARTS[v]||!A.nb||pi%A.pals.length===0)return 0;const p=A.pals[pi%A.pals.length];if(!p||!m2hex(p.acc))return 0;return palFor(v,p.acc,p.lite);}
+const sw=(g,a)=>h('span',{style:`background:linear-gradient(135deg,${g} 50%,${a} 50%)`});
+palRow=function(){const A=ARTS[P.art];if(!A)return null;const n=A.pals.length,cur=(P.pal||0)%n,set=i=>{P.pal=i;palRemember();ch();};
+ const pick=h('input',{type:'color',value:(m2hex(A.pals[cur].acc)?A.pals[cur].acc:'#d6336c'),'aria-label':T('Pick any colour'),onchange:e=>{const c=e.target.value;if(!m2hex(c))return;const i=slotOf(c,A.pals[cur].lite);if(i<0){toast(T('Too many colours saved. Delete some designs first.'));return;}set(PSLOT+i);}});
+ const add=h('label',{class:'pl padd',title:T('Pick any colour')},h('span',{},'+'),pick);
+ const rec=MYC.r.map(r=>{const i=r.c&&palFor0(P.art,r);return h('button',{class:'pl'+(i===cur?' on':''),'aria-label':T('Recent colour'),onclick:()=>{const j=palFor(P.art,r.c,r.l);set(j);}},sw(r.bg,r.c));});
+ const all=[];for(let i=0;i<A.nb;i++){const p=A.pals[i];all.push(h('button',{class:'pl'+(cur===i?' on':''),'aria-label':T('Colours')+' '+(i+1),onclick:()=>set(i)},sw(p.g[1],p.acc)));}
+ if(cur>=PSLOT){const p=A.pals[cur];all.unshift(h('button',{class:'pl on','aria-label':T('Your colour')},sw(p.g[1],p.acc)));}
+ return h('div',{class:'row scroll pls pwrap'},add,rec,rec.length?h('i',{class:'psep'}):null,all);};
+/* which palette a recent colour already maps to here, without adding a new one */
+function palFor0(art,r){const A=ARTS[art];if(!A||!A.nb)return -1;for(let i=0;i<A.nb;i++){const p=A.pals[i];if(!!p.lite===!!r.l&&m2hex(p.acc)&&p.acc.toLowerCase()===r.c)return i;}const s=MYC.s.findIndex(x=>x.c===r.c&&x.l===r.l);return s<0?-1:PSLOT+s;}
+document.head.append(h('style',{},'.psep{flex:none;width:1px;align-self:stretch;margin:8px 4px;background:rgba(255,255,255,.25)}.plh{display:block;opacity:.65;font-size:12px;margin:2px 0 4px}.padd{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px dashed rgba(255,255,255,.45)!important}.padd span{background:none!important;box-shadow:none!important;display:flex!important;align-items:center;justify-content:center;font-size:24px;line-height:1}.padd input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:0;padding:0}'));
+Object.assign(AR,{'Pick any colour':'اختر أي لون','Your colours':'ألوانك','All colours':'كل الألوان','Recent colour':'لون مستخدم مؤخراً','Your colour':'لونك','Too many colours saved. Delete some designs first.':'حُفظت ألوان كثيرة. احذف بعض التصاميم أولاً.'});
 
 /* ---------- choosing an option keeps the list where it was: the panel, its sideways rows and the page do not jump back to the start ---------- */
 let KSD=0;
