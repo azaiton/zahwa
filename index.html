@@ -5883,6 +5883,53 @@ function palFor0(art,r){const A=ARTS[art];if(!A||!A.nb)return -1;for(let i=0;i<A
 document.head.append(h('style',{},'.psep{flex:none;width:1px;align-self:stretch;margin:8px 4px;background:rgba(255,255,255,.25)}.plh{display:block;opacity:.65;font-size:12px;margin:2px 0 4px}.padd{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px dashed rgba(255,255,255,.45)!important}.padd span{background:none!important;box-shadow:none!important;display:flex!important;align-items:center;justify-content:center;font-size:24px;line-height:1}.padd input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:0;padding:0}'));
 Object.assign(AR,{'Pick any colour':'اختر أي لون','Your colours':'ألوانك','All colours':'كل الألوان','Recent colour':'لون مستخدم مؤخراً','Your colour':'لونك','Too many colours saved. Delete some designs first.':'حُفظت ألوان كثيرة. احذف بعض التصاميم أولاً.'});
 
+/* ---------- your own colour sets: start from any palette, change the background, text and accent, and it is kept as yours for every design ---------- */
+const CSB=PSLOT+CMAX,SMAX=24;
+let MYS=[];try{const o=JSON.parse(localStorage.getItem('zahwa-sets')||'[]');if(Array.isArray(o))MYS=o.filter(s=>s&&Array.isArray(s.g)&&s.g.every(m2hex)&&m2hex(s.ink)&&m2hex(s.acc)).slice(0,SMAX);}catch(e){}
+const mysSave=()=>{try{localStorage.setItem('zahwa-sets',JSON.stringify(MYS));}catch(e){}};
+/* a set dressed for one background: that background's own extras, the owner's three colours */
+function cpFor(A,s){const own=A.pals.slice(0,A.nb||1),b=own.find(p=>!!p.lite===!!s.lite)||own[0];return Object.assign({},b,{g:s.g.slice(),ink:s.ink,acc:s.acc,lite:s.lite,x:Array.isArray(b.x)&&!s.mono?b.x:s.g.slice(),my:1});}
+function cpPut(k){const idx=CSB+k,s=MYS[k];Object.keys(ARTS).forEach(n=>{const A=ARTS[n];if(!A||!A.nb)return;while(A.pals.length<CSB+SMAX)A.pals.push(A.pals[0]);A.pals[idx]=s?cpFor(A,s):A.pals[0];});
+ Object.keys(TFX).forEach(q=>{if(q.split('|')[2]===String(idx))delete TFX[q];});}
+for(let k=0;k<SMAX;k++)cpPut(k);
+/* every new picked colour lands in its own fixed place, never after the custom sets */
+slotOf=function(c,l){c=c.toLowerCase();l=l?1:0;let i=MYC.s.findIndex(s=>s.c===c&&s.l===l);if(i>=0)return i;
+ if(MYC.s.length>=CMAX){const used=new Set();[P,...PL.map(x=>x.d)].forEach(d=>{if(d&&(d.pal||0)>=PSLOT&&(d.pal||0)<CSB)used.add(d.pal-PSLOT);});i=MYC.s.findIndex((s,j)=>!used.has(j)&&!MYC.r.some(r=>r.c===s.c&&r.l===s.l));if(i<0)return -1;MYC.s[i]={c,l};}
+ else{i=MYC.s.length;MYC.s.push({c,l});}Object.keys(ARTS).forEach(k=>{const A=ARTS[k];if(A&&A.nb){while(A.pals.length<CSB+SMAX)A.pals.push(A.pals[0]);A.pals[PSLOT+i]=palMake(A,c,l);}});TC.clear();mycSave();return i;};
+const cpLite=g=>(g.reduce((a,x)=>a+m2lum(x),0)/g.length)>.55;
+const cpUsed=k=>PL.some(x=>x.d&&x.d.id!==P.id&&x.d.pal===CSB+k&&x.id!==P.id);
+/* the set this post is using, or a new one copied from its current palette */
+function cpMine(){const A=ARTS[P.art];if(!A)return -1;const cur=P.pal||0;if(cur>=CSB&&cur<CSB+SMAX&&MYS[cur-CSB]&&!cpUsed(cur-CSB))return cur-CSB;
+ const p=A.pals[cur%A.pals.length]||A.pals[0],s={g:(p.g||['#222','#222','#222']).map(x=>m2hex(x)?x:'#222222').slice(0,3),ink:m2hex(p.ink)?p.ink:'#ffffff',acc:m2hex(p.acc)?p.acc:'#d6336c',lite:!!p.lite,from:cur<PSLOT?cur:0};while(s.g.length<3)s.g.push(s.g[0]);
+ let k=MYS.findIndex((q,j)=>!q||(!cpUsedAny(j)));if(MYS.length<SMAX)k=MYS.length;if(k<0)k=0;MYS[k]=s;mysSave();cpPut(k);P.pal=CSB+k;return k;}
+const cpUsedAny=k=>P.pal===CSB+k||PL.some(x=>x.d&&x.d.pal===CSB+k);
+let CPED=0;
+function cpEditor(){const A=ARTS[P.art];if(!A)return null;const cur=P.pal||0,on=cur>=CSB&&MYS[cur-CSB],s=on?MYS[cur-CSB]:null,p=s||A.pals[cur%A.pals.length]||A.pals[0];
+ const live=(f)=>e=>{const v=e.target.value;if(!m2hex(v))return;const k=cpMine();if(k<0)return;f(MYS[k],v);MYS[k].lite=cpLite(MYS[k].g);cpPut(k);DIRTY=1;e.target.parentNode.querySelector('i').style.background=v;};
+ const done=()=>{mysSave();TC.clear();ch();};
+ const sw=(label,val,f)=>h('label',{class:'cpsw'},h('i',{style:`background:${val}`}),h('span',{},label),h('input',{type:'color',value:val,oninput:live(f),onchange:done}));
+ return h('div',{class:'cped'},h('div',{class:'cprow'},
+  sw(T('Background'),p.g[0],(q,v)=>{q.g=[v,m2mix(v,cpLite([v])?'#000000':'#ffffff',.06),v];}),
+  sw(T('Second background'),p.g[1]||p.g[0],(q,v)=>{q.g[1]=v;}),
+  sw(T('Text'),p.ink,(q,v)=>{q.ink=v;}),
+  sw(T('Accent'),p.acc,(q,v)=>{q.acc=v;})),
+  h('small',{},T(on?'These are your colours. They are kept for your other designs too.':'Change any colour and this becomes your own colour set.')),
+  on&&h('div',{class:'row',style:'justify-content:flex-start;gap:8px'},h('button',{class:'chip',onclick:()=>{P.pal=s.from||0;TC.clear();ch();}},'↶ '+T('Back to the original')),
+   h('button',{class:'chip',onclick:()=>{const k=cur-CSB;if(cpUsed(k)){toast(T('Another design uses these colours, so they stay.'));P.pal=s.from||0;ch();return;}MYS[k]=null;mysSave();cpPut(k);P.pal=s.from||0;TC.clear();ch();}},'🗑 '+T('Delete this set'))));}
+/* the colour row: your sets first, then the edit button and everything that was there */
+{const pr=palRow;palRow=function(){const row=pr();if(!row)return row;const A=ARTS[P.art],cur=P.pal||0;
+ const mine=MYS.map((s,k)=>s&&h('button',{class:'pl pmy'+(cur===CSB+k?' on':''),'aria-label':T('Your colour set'),onclick:()=>{P.pal=CSB+k;ch();}},h('span',{style:`background:linear-gradient(135deg,${s.g[0]} 0 45%,${s.ink} 45% 55%,${s.acc} 55%)`}))).filter(Boolean);
+ const ed=h('button',{class:'pl pedit'+(CPED?' on':''),'aria-label':T('Edit colours'),title:T('Edit colours'),onclick:()=>{CPED=CPED?0:1;ch();}},h('span',{},'✎'));
+ row.prepend(ed,...mine,mine.length?h('i',{class:'psep'}):'');
+ if(cur>=CSB){row.querySelectorAll('.pl.on').forEach(b=>{if(!b.classList.contains('pmy'))b.classList.remove('on');});}
+ return CPED?h('div',{},row,cpEditor()):row;};}
+document.head.append(h('style',{},`.pedit{display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.45)!important}.pedit span{background:none!important;box-shadow:none!important;display:flex!important;align-items:center;justify-content:center;font-size:20px}.pedit.on{border-color:var(--pri)!important}
+.pmy{outline:1.5px dashed rgba(255,255,255,.5);outline-offset:2px}.cped{margin:6px 0 4px;padding:10px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid var(--line)}.cprow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cpsw{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:700;cursor:pointer;text-align:center}.cpsw i{display:block;width:46px;height:46px;border-radius:50%;border:2px solid rgba(255,255,255,.7);box-shadow:0 2px 8px rgba(0,0,0,.3)}.cpsw input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:0;padding:0}`));
+Object.assign(AR,{'Background':'الخلفية','Second background':'الخلفية الثانية','Text':'النص','Accent':'اللون المميز','Edit colours':'عدّل الألوان','Your colour set':'ألوانك',
+ 'These are your colours. They are kept for your other designs too.':'هذه ألوانك، وتبقى محفوظة لتصاميمك الأخرى.','Change any colour and this becomes your own colour set.':'غيّر أي لون وتصبح هذه مجموعة ألوانك الخاصة.',
+ 'Back to the original':'عُد إلى الأصل','Delete this set':'احذف هذه المجموعة','Another design uses these colours, so they stay.':'تصميم آخر يستخدم هذه الألوان، لذا تبقى.'});
+
 /* ---------- the wallpaper maker: its own screen, apart from posts. Photos, arrangement, background, frames, words and decoration, for a phone or a computer ---------- */
 Object.assign(ICONS,{wall:'M3 4.5h13v9.5H3zM7.5 18h4M9.5 14v4M17.5 8.5h3.5v12h-3.5zM19.2 18.3h.01',grid4:'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',frame2:'M3 3h18v18H3zM7 7h10v10H7z',
  sparkle:'M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8z',type:'M5 6V4h14v2M12 4v16M9 20h6'});
@@ -6105,6 +6152,58 @@ if(typeof DK!=='undefined'&&!DK.includes('nocta'))DK.push('nocta');
 /* in the video: one beat for each thing in the package, then the price */
 {const p0=shPlan;shPlan=function(){const S=p0();if(P.occ!=='bundle')return S;const it=(P.items||[]).filter(q=>q&&String(q.n||'').trim()).slice(0,6);if(!it.length||S.some(x=>x.k==='step'))return S;const at=Math.max(1,S.findIndex(x=>x.k==='deal'));S.splice(at<0?S.length:at,0,...it.map((q,i)=>({k:'step',d:2.6,i,m:String(q.n).trim()})));let tt=0;S.forEach(x=>{x.t=tt;tt+=x.d;});S.T=tt;return S;};}
 Object.assign(AR,{'Package name':'اسم الباقة','What is in the package':'ماذا تشمل الباقة','Package price':'سعر الباقة','Price without the package':'السعر بدون الباقة','Show a button on the design':'أظهر زراً على التصميم','Package card':'بطاقة الباقة'});
+
+/* ---------- photo layouts for every post (occasions and shops): full photo, side by side, diagonal, circle, arch, tilted print, photo strip ---------- */
+/* the words, stacked to fit a box: shop posts get name, price and button; other posts get heading, names, message and signature */
+function pxWords(c,W,H,t,cx,y0,y1,w,ink,acc,E){if(E){const I=shI(c,E,cx,w,{ink,acc,bbg:acc,bfg:shOn(acc),sw:1});shStack(c,cx,y0,y1,[I.eye(),I.name(8.4),E.pr?I.cap(2):I.cap(3),I.price(5.4),I.until(),I.sg(),I.cta()],E.s*1.8);return;}
+ const T_=th(),m=Math.min(W,H),s=m/100,f=FONT[T_.f]||FONT.elegant,X={sh:0,fx:0},hd=hl(1),nm=names(),ws=String(wish()||'').trim(),sg=sign(),it=[];
+ const add=(str,o,gap)=>{if(!str)return;const oo=Object.assign({},X,o,{max:w}),l=lay(c,str,oo);it.push([l.h+(gap||0),y=>lines(c,str,cx,y-(gap||0)/2,oo)]);};
+ add(hd,{size:s*4.6,color:acc,w:800,ml:2,lh:1.2},s*1.5);add(nm,{size:s*11,fam:f,color:ink,w:800,ml:2,lh:1.1},s*1.5);add(ws,{size:s*3.8,color:ink,w:600,ml:4,lh:1.45,a:.92},s*1.5);add(sg,{size:s*3.4,color:ink,w:700,ml:1,a:.8});shStack(c,cx,y0,y1,it,s*1.2);}
+function pxSet(c,W,H,t){const shop=isShop(),E=shop?shE(c,W,H,t):null,T_=shop?E.T_:PS(c,W,H,t),m=Math.min(W,H),lite=!!T_.shc,acc=shop?(lite?E.A:E.pal[0]):(m2hex(T_.acc)?T_.acc:'#e8c56b'),ink=shop?(lite?'#1d1530':'#ffffff'):(m2hex(T_.ink)?T_.ink:(lite?'#1d1530':'#ffffff'));
+ return{E,T_,m,s:m/100,lite,acc,ink,im:IMG[P.photos[0]],wide:W>H*1.15,tall:H>W*1.5,bo:shop&&brOn()};}
+function pxPhoto(c,X,path,x,y,w,h){if(X.E)return shPhoto(c,X.E,path,x,y,w,h);c.save();path();c.clip();if(X.im)cover(c,X.im,x,y,w,h,1,0,0);else{c.fillStyle=hexA(X.acc,.25);c.fillRect(x,y,w,h);}c.restore();}
+const pxEnd=(c,W,H,X)=>{if(X.E)brPill(c,W,H,X.E);};
+const pxBot=(H,X)=>X.bo?X.E.fy-X.m*.07:H*.955;
+const LXP={
+/* the photo fills the post, the words sit on a dark fade */
+px_full(c,W,H,t){const X=pxSet(c,W,H,t);pxPhoto(c,X,()=>{c.beginPath();c.rect(0,0,W,H);},0,0,W,H);const g0=X.wide?.3:.42,g=c.createLinearGradient(0,H*g0,0,H);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(.45,'rgba(0,0,0,.55)');g.addColorStop(1,'rgba(0,0,0,.86)');c.fillStyle=g;c.fillRect(0,H*g0,W,H*(1-g0));
+ const tx=X.wide?(RTL?W*.3:W*.7):W/2;c.save();c.shadowColor='rgba(0,0,0,.45)';c.shadowBlur=X.m*.02;pxWords(c,W,H,t,tx,H*(X.wide?.4:.56),pxBot(H,X),X.wide?W*.52:W*.86,'#ffffff',m2lum(X.acc)>.35?X.acc:'#ffd23f',X.E);c.restore();pxEnd(c,W,H,X);},
+/* photo on one half, words on the other */
+px_side(c,W,H,t){const X=pxSet(c,W,H,t),stack=X.tall;if(stack){const ph=H*.52;pxPhoto(c,X,()=>{c.beginPath();c.rect(0,0,W,ph);},0,0,W,ph);c.fillStyle=X.acc;c.fillRect(0,ph-X.m*.008,W,X.m*.016);pxWords(c,W,H,t,W/2,ph+X.m*.06,pxBot(H,X),W*.84,X.ink,X.acc,X.E);}
+ else{const pw=W*.5,px=RTL?W-pw:0;pxPhoto(c,X,()=>{c.beginPath();c.rect(px,0,pw,H);},px,0,pw,H);c.fillStyle=X.acc;c.fillRect(RTL?px-X.m*.008:pw-X.m*.008,0,X.m*.016,H);const tx=RTL?W*.25:W*.75;pxWords(c,W,H,t,tx,H*.08,pxBot(H,X),W*.42,X.ink,X.acc,X.E);}pxEnd(c,W,H,X);},
+/* a diagonal cut: photo above, colour below */
+px_diag(c,W,H,t){const X=pxSet(c,W,H,t);if(X.wide){const a=W*.6,b=W*.4,f=x=>RTL?W-x:x;pxPhoto(c,X,()=>{c.beginPath();c.moveTo(f(0),0);c.lineTo(f(a),0);c.lineTo(f(b),H);c.lineTo(f(0),H);c.closePath();},RTL?W-a:0,0,a,H);
+  c.strokeStyle=X.acc;c.lineWidth=X.m*.018;c.beginPath();c.moveTo(f(a+X.m*.012),0);c.lineTo(f(b+X.m*.012),H);c.stroke();pxWords(c,W,H,t,RTL?W*.24:W*.76,H*.08,pxBot(H,X),W*.38,X.ink,X.acc,X.E);pxEnd(c,W,H,X);return;}
+ const a=H*.56,b=H*.34,L=RTL?b:a,R=RTL?a:b;pxPhoto(c,X,()=>{c.beginPath();c.moveTo(0,0);c.lineTo(W,0);c.lineTo(W,R);c.lineTo(0,L);c.closePath();},0,0,W,Math.max(a,b));
+ c.strokeStyle=X.acc;c.lineWidth=X.m*.018;c.beginPath();c.moveTo(0,L+X.m*.012);c.lineTo(W,R+X.m*.012);c.stroke();pxWords(c,W,H,t,W/2,Math.max(a,b)+X.m*.04,pxBot(H,X),W*.84,X.ink,X.acc,X.E);pxEnd(c,W,H,X);},
+/* the photo in a big circle with a ring */
+px_circle(c,W,H,t){const X=pxSet(c,W,H,t),r=Math.min(W*(X.wide?.2:.33),H*(X.tall?.22:.25)),cx=X.wide?(RTL?W*.75:W*.25):W/2,cy=X.wide?H/2:H*(X.tall?.28:.3);c.strokeStyle=X.acc;c.lineWidth=X.m*.008;c.beginPath();c.arc(cx,cy,r*1.1,0,7);c.stroke();
+ c.save();c.shadowColor='rgba(0,0,0,.3)';c.shadowBlur=X.m*.04;c.fillStyle='#fff';c.beginPath();c.arc(cx,cy,r*1.03,0,7);c.fill();c.restore();pxPhoto(c,X,()=>{c.beginPath();c.arc(cx,cy,r,0,7);},cx-r,cy-r,2*r,2*r);
+ if(X.wide)pxWords(c,W,H,t,RTL?W*.3:W*.7,H*.1,pxBot(H,X),W*.48,X.ink,X.acc,X.E);else pxWords(c,W,H,t,W/2,cy+r*1.2+X.m*.03,pxBot(H,X),W*.84,X.ink,X.acc,X.E);pxEnd(c,W,H,X);},
+/* the photo in an arch */
+px_arch(c,W,H,t){const X=pxSet(c,W,H,t),w=X.wide?W*.32:W*.62,h=X.wide?H*.8:H*(X.tall?.46:.5),x=X.wide?(RTL?W*.6:W*.08):W/2-w/2,y=X.wide?H*.1:H*.06,arch=(e)=>{const r=w/2+e;c.beginPath();c.moveTo(x-e,y+h+e);c.lineTo(x-e,y+r);c.arc(x+w/2,y+r,r,Math.PI,0);c.lineTo(x+w+e,y+h+e);c.closePath();};
+ c.save();c.shadowColor='rgba(0,0,0,.3)';c.shadowBlur=X.m*.04;arch(X.m*.012);c.fillStyle=X.acc;c.fill();c.restore();pxPhoto(c,X,()=>arch(0),x,y,w,h);
+ if(X.wide)pxWords(c,W,H,t,RTL?W*.28:W*.7,H*.1,pxBot(H,X),W*.48,X.ink,X.acc,X.E);else pxWords(c,W,H,t,W/2,y+h+X.m*.05,pxBot(H,X),W*.84,X.ink,X.acc,X.E);pxEnd(c,W,H,X);},
+/* a tilted print with tape */
+px_tilt(c,W,H,t){const X=pxSet(c,W,H,t),w=X.wide?W*.34:W*.6,h=w*1.1,cx=X.wide?(RTL?W*.74:W*.26):W/2,cy=X.wide?H/2:H*.06+h/2+X.m*.02,b=w*.05;c.save();c.translate(cx,cy);c.rotate(-.06);c.shadowColor='rgba(0,0,0,.35)';c.shadowBlur=X.m*.04;c.fillStyle='#fdfbf7';c.fillRect(-w/2,-h/2,w,h);c.shadowColor='transparent';
+ const pw=w-2*b;pxPhoto(c,X,()=>{c.beginPath();c.rect(-w/2+b,-h/2+b,pw,pw);},-w/2+b,-h/2+b,pw,pw);c.fillStyle=hexA(X.acc,.65);c.save();c.translate(0,-h/2);c.rotate(.08);c.fillRect(-w*.17,-w*.04,w*.34,w*.08);c.restore();c.restore();
+ if(X.wide)pxWords(c,W,H,t,RTL?W*.3:W*.68,H*.1,pxBot(H,X),W*.5,X.ink,X.acc,X.E);else pxWords(c,W,H,t,W/2,cy+h/2+X.m*.05,pxBot(H,X),W*.84,X.ink,X.acc,X.E);pxEnd(c,W,H,X);},
+/* up to three photos side by side */
+px_strip(c,W,H,t){const X=pxSet(c,W,H,t),ims=P.photos.map(i=>IMG[i]).filter(Boolean).slice(0,3),n=Math.max(1,ims.length),g=X.m*.012,sh=X.wide?H*.55:H*(X.tall?.42:.48),y=X.m*.05,w=(W-X.m*.1-g*(n-1))/n;
+ for(let i=0;i<n;i++){const x=X.m*.05+(RTL?n-1-i:i)*(w+g),im=ims[i];c.save();c.shadowColor='rgba(0,0,0,.3)';c.shadowBlur=X.m*.03;c.fillStyle='#fff';rr(c,x-g*.4,y-g*.4,w+g*.8,sh+g*.8,X.m*.02);c.fill();c.restore();c.save();rr(c,x,y,w,sh,X.m*.016);c.clip();if(im)cover(c,im,x,y,w,sh,1,0,0);else{c.fillStyle=hexA(X.acc,.25);c.fillRect(x,y,w,sh);}c.restore();}
+ pxWords(c,W,H,t,W/2,y+sh+X.m*.05,pxBot(H,X),W*.84,X.ink,X.acc,X.E);pxEnd(c,W,H,X);}};
+Object.assign(LX,LXP);
+const PXN={px_full:['Full photo','صورة كاملة'],px_side:['Side by side','جنباً إلى جنب'],px_diag:['Diagonal','قطري'],px_circle:['Photo circle','صورة دائرية'],px_arch:['Photo arch','صورة في قوس'],px_tilt:['Tilted print','صورة مائلة'],px_strip:['Photo strip','شريط صور']};
+Object.keys(PXN).forEach(k=>Object.defineProperty(LNAME,k,{value:PXN[k],enumerable:false}));
+/* offered first on every post that has a photo */
+{const z0=czLayouts;czLayouts=function(){const L=z0().filter(q=>q[0]!=='s_full'&&q[0]!=='full');if(!(P.photos||[]).some(id=>IMG[id]))return L;return[...Object.keys(PXN).map(k=>[k,L2(PXN[k])]),...L.filter(q=>!PXN[q[0]])];};}
+/* ---------- a Layout row at the top of Design, so layouts are one tap away ---------- */
+{const ot=openTool;openTool=function(id){const r=ot.apply(this,arguments);if(id!=='design')return r;const card=$('sheet').querySelector('.card'),grid=card&&card.querySelector('.tg3');if(!grid)return r;let L=[];try{L=czLayouts();}catch(e){}if(!L.length)return r;
+ const hasPh=(P.photos||[]).some(id=>IMG[id]),cur=P.layout,first=grid.previousElementSibling&&grid.previousElementSibling.previousElementSibling;
+ const row=h('div',{class:'row scroll'},L.map(([k,l])=>h('button',{class:'chip'+(cur===k?' on':''),onclick:()=>{P.layout=k;DIRTY=1;TC.clear();ch();}},l)));
+ const box=[h('div',{class:'lbl'},T('Layout')),!hasPh&&h('small',{},T('Add a photo to get the photo layouts: full photo, side by side, diagonal and more.')),row].filter(Boolean);
+ const lb=[...card.querySelectorAll('.lbl')].find(x=>x.textContent===T('Style'));(lb||grid).before(...box);void first;return r;};}
+Object.assign(AR,{'Layout':'التخطيط','Add a photo to get the photo layouts: full photo, side by side, diagonal and more.':'أضف صورة لتظهر تخطيطات الصور: صورة كاملة، جنباً إلى جنب، قطري والمزيد.'});
 
 /* ---------- six more video styles, none of them cartoon: clean minimal, cinematic, gold luxury, Islamic geometry, monochrome, frosted glass ---------- */
 VST.push(['minimal','Clean minimal','بسيط أنيق'],['cinema','Cinematic','سينمائي'],['luxe','Gold luxury','فخامة ذهبية'],['islamic','Islamic geometry','زخرفة إسلامية'],['mono','Monochrome','أبيض وأسود'],['glass','Frosted glass','زجاج ضبابي']);
