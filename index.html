@@ -5739,6 +5739,89 @@ function palFor0(art,r){const A=ARTS[art];if(!A||!A.nb)return -1;for(let i=0;i<A
 document.head.append(h('style',{},'.psep{flex:none;width:1px;align-self:stretch;margin:8px 4px;background:rgba(255,255,255,.25)}.plh{display:block;opacity:.65;font-size:12px;margin:2px 0 4px}.padd{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px dashed rgba(255,255,255,.45)!important}.padd span{background:none!important;box-shadow:none!important;display:flex!important;align-items:center;justify-content:center;font-size:24px;line-height:1}.padd input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:0;padding:0}'));
 Object.assign(AR,{'Pick any colour':'اختر أي لون','Your colours':'ألوانك','All colours':'كل الألوان','Recent colour':'لون مستخدم مؤخراً','Your colour':'لونك','Too many colours saved. Delete some designs first.':'حُفظت ألوان كثيرة. احذف بعض التصاميم أولاً.'});
 
+/* ---------- wallpapers: the post's photos and design as a phone or desktop background, leaving room for the clock or the icons ---------- */
+Object.assign(ICONS,{wall:'M3 4.5h13v9.5H3zM7.5 18h4M9.5 14v4M17.5 8.5h3.5v12h-3.5zM19.2 18.3h.01'});
+const WPD={phone:[['me','This phone',0,0],['iphone','iPhone',1290,2796],['android','Android',1440,3200],['ipad','iPad',2048,2732]],
+ desk:[['me','This screen',0,0],['fhd','Full HD',1920,1080],['qhd','2K',2560,1440],['uhd','4K',3840,2160],['lap','Laptop 16:10',2560,1600],['uw','Ultrawide',3440,1440]]};
+const WPL={polaroid:'Polaroids',grid:'Mosaic',hero:'One big photo',circles:'Circles',full:'Full photo',post:'The design'};
+const wpG=()=>{const o=P.wp&&typeof P.wp==='object'?P.wp:(P.wp={});if(!o.kind)o.kind=(Math.min(screen.width,screen.height)<700)?'phone':'desk';if(o.room==null)o.room=1;if(o.name==null)o.name=1;if(!WPL[o.lay])o.lay=(P.photos||[]).some(id=>IMG[id])?'polaroid':'post';return o;};
+/* the pixel size; "this phone / this screen" reads the real screen, turned the right way */
+function wpSz(){const o=wpG(),L=WPD[o.kind],d=L.find(q=>q[0]===o.size)||L[0];if(d[2])return[d[2],d[3]];const r=Math.min(3,window.devicePixelRatio||1),a=Math.round(screen.width*r),b=Math.round(screen.height*r),lo=Math.min(a,b),hi=Math.max(a,b);
+ if(o.kind==='phone')return lo<500||hi>4000?[1290,2796]:[lo,hi];return lo<700||hi>8000||lo/hi>.75?[1920,1080]:[hi,lo];}
+let WPPREV=0;
+/* where photos may go: below the lock-screen clock on a phone, clear of the icon column and taskbar on a desktop */
+function wpR(W,H){const o=wpG(),ph=H>W;if(!o.room)return{x:W*.06,y:H*.06,w:W*.88,h:H*.88};
+ return ph?{x:W*.07,y:H*.34,w:W*.86,h:H*.53}:{x:W*.13,y:H*.07,w:W*.82,h:H*.84};}
+const wpRnd=s=>()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
+/* how many columns and rows fit n cells of shape a (w/h) best in a box */
+function wpFit(n,a,w,h,g){let b={c:1,r:n,s:0};for(let c=1;c<=n;c++){const r=Math.ceil(n/c),cw=Math.min((w-g*(c-1))/c,((h-g*(r-1))/r)*a);if(cw>b.s)b={c,r,s:cw};}return b;}
+function wpPh(c,im,x,y,w,h,r,L){c.save();rr(c,x,y,w,h,r);c.clip();if(im)cover(c,im,x,y,w,h,1,0,0);else{c.fillStyle=hexA(L.acc,.22);c.fillRect(x,y,w,h);c.strokeStyle=hexA(L.acc,.6);c.lineWidth=Math.min(w,h)*.02;const m=Math.min(w,h)*.18;c.strokeRect(x+w/2-m,y+h/2-m*.8,m*2,m*1.6);}c.restore();}
+function wpDraw(c,W,H,t){t=t==null?2.4:t;const o=wpG(),T_=th(),acc=m2hex(T_.acc)?T_.acc:'#d6336c',L={acc},m=Math.min(W,H),ph=H>W;RTL=P.lang==='ar';
+ const ims=(P.photos||[]).map(id=>IMG[id]).filter(Boolean),R=wpR(W,H);bg(c,W,H,t,T_);
+ /* the design itself, as a card that sits in the free area */
+ if(o.lay==='post'){const[fw,fh]=(FMT[P.fmt]||FMT.portrait).i,a=fw/fh,w=Math.min(R.w*.92,R.h*.96*a),hh=w/a,x=R.x+(R.w-w)/2,y=R.y+(R.h-hh)/2,k=Math.max(1,Math.round(Math.min(2,1080/w)*10)/10),pc=document.createElement('canvas');pc.width=Math.round(w*k);pc.height=Math.round(hh*k);
+  poster(pc.getContext('2d'),pc.width,pc.height,t);RTL=P.lang==='ar';c.save();c.shadowColor='rgba(0,0,0,.4)';c.shadowBlur=m*.05;c.shadowOffsetY=m*.015;c.fillStyle='#fff';rr(c,x,y,w,hh,m*.035);c.fill();c.restore();c.save();rr(c,x,y,w,hh,m*.035);c.clip();c.drawImage(pc,x,y,w,hh);c.restore();if(WPPREV)wpGuide(c,W,H);return;}
+ const nm=o.name?(String(P.name||'').trim()||hl(1)):'',nz=m*(ph?.075:.06);let nmH=0;if(nm&&o.lay!=='full'){nmH=nz*1.9;R.h-=nmH;}
+ const lim=ph?6:9,list=ims.length?ims.slice(0,lim):[null,null,null],n=list.length,rnd=wpRnd(n*97+(P.photos||[]).length*13+(o.seed||0));
+ if(o.lay==='full'){const im=list[0];c.save();if(im){const ia=(im.width||1)/(im.height||1),sa=W/H;if(ia<sa*.7||ia>sa*1.45){/* a photo the wrong shape for this screen: soft copy behind, the whole photo in front */
+   c.save();try{c.filter='blur('+Math.round(m*.03)+'px)';}catch(e){}cover(c,im,-m*.05,-m*.05,W+m*.1,H+m*.1,1,0,0);c.restore();c.fillStyle='rgba(0,0,0,.3)';c.fillRect(0,0,W,H);const rh=R.h-(nm?nz*2.6:0),w=Math.min(R.w,rh*ia),hh=w/ia,x=R.x+(R.w-w)/2,y=R.y+(rh-hh)/2;
+   c.save();c.shadowColor='rgba(0,0,0,.45)';c.shadowBlur=m*.05;c.fillStyle='#fff';rr(c,x,y,w,hh,m*.025);c.fill();c.restore();c.save();rr(c,x,y,w,hh,m*.025);c.clip();c.drawImage(im,x,y,w,hh);c.restore();}else cover(c,im,0,0,W,H,1,0,0);}c.restore();let g=c.createLinearGradient(0,0,0,H*.4);g.addColorStop(0,'rgba(0,0,0,.35)');g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,0,W,H*.4);
+  g=c.createLinearGradient(0,H*.6,0,H);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.55)');c.fillStyle=g;c.fillRect(0,H*.6,W,H*.4);
+  if(nm)text(c,nm,R.x+R.w/2,R.y+R.h-nz*.6,{size:nz*1.2,fam:FONT[T_.f]||FONT.elegant,color:'#ffffff',w:800,max:ph?W*.8:W*.45,shc:'rgba(0,0,0,.5)'});}
+ else if(o.lay==='grid'){const g=m*.016,hero=n>=4,cells=hero?n+3:n,f=wpFit(cells,ph?.82:1.25,R.w,R.h,g),cw=f.s,chh=cw/(ph?.82:1.25),tw=f.c*cw+g*(f.c-1),th2=f.r*chh+g*(f.r-1),x0=R.x+(R.w-tw)/2,y0=R.y+(R.h-th2)/2;
+  const used=new Set(),slots=[];if(hero&&f.c>=2&&f.r>=2){slots.push([0,0,2,2]);[0,1].forEach(a=>[0,1].forEach(b=>used.add(a+','+b)));}for(let r=0;r<f.r;r++)for(let cc=0;cc<f.c;cc++)if(!used.has(r+','+cc))slots.push([r,cc,1,1]);
+  c.save();c.shadowColor='rgba(0,0,0,.28)';c.shadowBlur=m*.03;c.shadowOffsetY=m*.01;list.forEach((im,i)=>{const s=slots[i];if(!s)return;const[r,cc,rs,cs]=s,x=RTL?x0+tw-(cc+cs)*cw-(cc+cs-1)*g:x0+cc*(cw+g),y=y0+r*(chh+g),w=cs*cw+(cs-1)*g,hh=rs*chh+(rs-1)*g;c.fillStyle='#fff';rr(c,x,y,w,hh,m*.02);c.fill();});c.restore();
+  list.forEach((im,i)=>{const s=slots[i];if(!s)return;const[r,cc,rs,cs]=s,x=RTL?x0+tw-(cc+cs)*cw-(cc+cs-1)*g:x0+cc*(cw+g),y=y0+r*(chh+g),w=cs*cw+(cs-1)*g,hh=rs*chh+(rs-1)*g;wpPh(c,im,x,y,w,hh,m*.02,L);});}
+ else if(o.lay==='hero'){const im=list[0],a=ph?.8:1.45,w=Math.min(R.w*.86,R.h*.9*a),hh=w/a,x=R.x+(R.w-w)/2,y=R.y+(R.h-hh)/2,b=m*.014;c.save();c.shadowColor='rgba(0,0,0,.35)';c.shadowBlur=m*.05;c.shadowOffsetY=m*.015;c.fillStyle='#fff';rr(c,x-b,y-b,w+2*b,hh+2*b,m*.035);c.fill();c.restore();wpPh(c,im,x,y,w,hh,m*.028,L);
+  const sm=list.slice(1,3),r=m*(ph?.13:.1);sm.forEach((q,i)=>{const cx=i?x+w-r*.35:x+r*.35,cy=i?y+r*.35:y+hh-r*.35;c.save();c.shadowColor='rgba(0,0,0,.35)';c.shadowBlur=m*.03;c.fillStyle='#fff';c.beginPath();c.arc(cx,cy,r+b,0,7);c.fill();c.restore();c.save();c.beginPath();c.arc(cx,cy,r,0,7);c.clip();if(q)cover(c,q,cx-r,cy-r,2*r,2*r,1,0,0);c.restore();});}
+ else if(o.lay==='circles'){const cx=R.x+R.w/2,cy=R.y+R.h/2,rest=list.slice(1),k=rest.length,Rm=Math.min(R.w,R.h)/2;let sr=Rm*.34,rad,big;for(let q=0;q<40;q++){rad=Rm-sr*1.06;big=rad-sr*1.18;if(big>=sr*1.25&&(!k||2*Math.PI*rad/k>=sr*2.25))break;sr*=.93;}if(!k)big=Rm*.9;
+  const dot=(x,y,r,im)=>{c.save();c.shadowColor='rgba(0,0,0,.3)';c.shadowBlur=m*.03;c.fillStyle='#fff';c.beginPath();c.arc(x,y,r*1.05,0,7);c.fill();c.restore();c.save();c.beginPath();c.arc(x,y,r,0,7);c.clip();if(im)cover(c,im,x-r,y-r,2*r,2*r,1,0,0);else{c.fillStyle=hexA(acc,.25);c.fill();}c.restore();};
+  const sx=ph?1:Math.min(1.9,R.w/R.h);rest.forEach((q,i)=>{const a=-Math.PI/2+i*2*Math.PI/k;dot(cx+Math.cos(a)*rad*sx,cy+Math.sin(a)*rad,sr,q);});dot(cx,cy,big,list[0]);}
+ else{/* polaroids, scattered like on a wall */const g=m*.03,f=wpFit(n,.84,R.w,R.h,g),cw=f.s*.92,chh=cw/.84,tw=f.c*f.s+g*(f.c-1),th2=f.r*(f.s/.84)+g*(f.r-1),x0=R.x+(R.w-tw)/2,y0=R.y+(R.h-th2)/2;
+  list.forEach((im,i)=>{const r=Math.floor(i/f.c),cc=i%f.c,inRow=Math.min(f.c,n-r*f.c),off=(f.c-inRow)*(f.s+g)/2,cx=(RTL?x0+tw-off-(cc+.5)*f.s-cc*g:x0+off+(cc+.5)*f.s+cc*g)+(rnd()-.5)*g,cy=y0+(r+.5)*(f.s/.84)+r*g+(rnd()-.5)*g,ang=(rnd()-.5)*.2;
+   c.save();c.translate(cx,cy);c.rotate(ang);const b=cw*.05,pw=cw-2*b;c.save();c.shadowColor='rgba(0,0,0,.32)';c.shadowBlur=m*.025;c.shadowOffsetY=m*.01;c.fillStyle='#fdfbf7';c.fillRect(-cw/2,-chh/2,cw,chh);c.restore();
+   wpPh(c,im,-cw/2+b,-chh/2+b,pw,pw,2,L);c.fillStyle=hexA(acc,.55);c.save();c.translate(0,-chh/2);c.rotate((rnd()-.5)*.3);c.fillRect(-cw*.16,-cw*.04,cw*.32,cw*.08);c.restore();c.restore();});}
+ if(nm&&o.lay!=='full'){const lite=!!T_.shc;text(c,nm,ph?W/2:R.x+R.w/2,R.y+R.h+nmH*.55,{size:nz,fam:FONT[T_.f]||FONT.elegant,color:lite?'#1d1530':'#ffffff',w:800,max:R.w*.9,shc:lite?null:'rgba(0,0,0,.45)'});}
+ if(WPPREV)wpGuide(c,W,H);}
+/* preview only: a ghost clock, or ghost icons and a taskbar, to show what will cover the picture */
+function wpGuide(c,W,H){if(!wpG().room)return;const ph=H>W,m=Math.min(W,H);c.save();c.globalAlpha=.55;
+ if(ph){text(c,'9:41',W/2,H*.2,{size:W*.24,fam:'-apple-system,Helvetica,Arial,sans-serif',color:'#ffffff',w:600,sh:0,fx:0,shc:'rgba(0,0,0,.35)'});text(c,ltr(new Date().toLocaleDateString(P.lang==='ar'?'ar':'en',{weekday:'long',day:'numeric',month:'long'})),W/2,H*.105,{size:W*.045,fam:'-apple-system,Helvetica,Arial,sans-serif',color:'#ffffff',w:600,sh:0,fx:0});
+  c.fillStyle='rgba(255,255,255,.5)';[W*.2,W*.8].forEach(x=>{c.beginPath();c.arc(x,H*.93,W*.065,0,7);c.fill();});}
+ else{c.fillStyle='rgba(255,255,255,.35)';for(let i=0;i<6;i++){const s=m*.05;rr(c,W*.025,H*.04+i*s*1.7,s,s,s*.2);c.fill();}c.fillStyle='rgba(20,20,30,.6)';c.fillRect(0,H-H*.045,W,H*.045);}
+ c.restore();}
+async function wpSave(){const[w,hh]=wpSz(),cv=document.createElement('canvas'),kr=RTL;cv.width=w;cv.height=hh;toast(T('Preparing the images…'));await new Promise(r=>setTimeout(r,60));WPPREV=0;try{wpDraw(cv.getContext('2d'),w,hh);}catch(e){}RTL=kr;
+ const b=await new Promise(r=>cv.toBlob(r,'image/jpeg',.93));if(!b){toast(T('The image could not be made. Try a smaller size.'));return;}const f=new File([b],'zahwa-wallpaper-'+w+'x'+hh+'.jpg',{type:'image/jpeg'});
+ try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return;}}catch(e){if(e&&e.name==='AbortError')return;}await saveFile(f,f.name);toast(T('Wallpaper saved'));}
+function wallPanel(){const o=wpG(),[w,hh]=wpSz(),re=()=>{ch();openTool('wall');},kr=RTL,tw=hh>w?70:120,th3=Math.round(tw*hh/w);
+ const kinds=h('div',{class:'seg',style:'margin-bottom:6px'},[['phone',T('Phone')],['desk',T('Desktop')]].map(([k,l])=>h('button',{class:o.kind===k?'on':'',onclick:()=>{o.kind=k;o.size='';re();}},l)));
+ const sizes=h('div',{class:'row scroll'},WPD[o.kind].map(([k,n,a,b])=>h('button',{class:'chip'+((o.size||'me')===k?' on':''),onclick:()=>{o.size=k;re();}},T(n)+(a?'  '+ltr(a+'×'+b):''))));
+ const lays=h('div',{class:'row scroll bds'},Object.keys(WPL).map(k=>{const k0=o.lay,cv=h('canvas',{width:tw*2,height:th3*2,style:`width:${tw}px;height:${th3}px;border-radius:8px;display:block`});o.lay=k;const p0=WPPREV;WPPREV=1;try{wpDraw(cv.getContext('2d'),tw*2,th3*2);}catch(e){}WPPREV=p0;o.lay=k0;RTL=kr;
+  return h('button',{class:'bd sbc'+(o.lay===k?' sbon':''),'aria-pressed':o.lay===k?'true':'false',onclick:()=>{o.lay=k;re();}},cv,h('small',{},T(WPL[k])));}));
+ const chk=(k,l)=>h('label',{class:'chk'},h('input',{type:'checkbox',checked:!!o[k],onchange:e=>{o[k]=e.target.checked?1:0;re();}}),h('span',{},l));
+ const ph=o.kind==='phone',noPh=!(P.photos||[]).some(id=>IMG[id]);
+ return[kinds,sizes,h('small',{},T('Size')+': '+ltr(w+' × '+hh)),h('div',{class:'lbl'},T('Arrangement')),lays,
+  noPh&&h('button',{class:'btn',onclick:()=>openTool('photos')},'＋ '+T('Add photos for the photo wall')),
+  chk('room',T(ph?'Leave room for the clock':'Leave room for the icons and taskbar')),chk('name',T('Show the name')),
+  ['polaroid','grid','circles'].includes(o.lay)&&h('button',{class:'chip',onclick:()=>{o.seed=(o.seed||0)+1;re();}},'🎲 '+T('Shuffle')),
+  h('small',{},T('Colours and background come from the post\'s design. Change them in Design.')),
+  h('button',{class:'btn pri',onclick:wpSave},'⬆ '+T('Save wallpaper')),
+  h('small',{},T(ph?'On iPhone: open the picture in Photos, tap Share, then Use as Wallpaper. On Android: open it and choose Set as wallpaper.':'On Windows: right-click the picture and choose Set as desktop background. On Mac: right-click and choose Set Desktop Picture.'))];}
+/* the mode: a fourth choice beside Card and Video; the preview takes the wallpaper's shape */
+{const o0=openTool;openTool=function(id){if(id==='wall')return toolSheet('wall',T('Wallpaper'),wallPanel());return o0.apply(this,arguments);};}
+{const cv0=cvEl;cvEl=function(){if(P.mode==='wall'&&VIEW==='studio'){const[w,hh]=wpSz(),W=hh>w?400:720,H=Math.round(W*hh/w);return h('canvas',{id:'cv',width:W,height:H,style:`aspect-ratio:${W}/${H}`});}return cv0();};}
+{const tp=tickPv;tickPv=function(){if(VIEW!=='studio'||P.mode!=='wall'||Show.on)return tp();raf(tickPv);const now=performance.now();if(now-(tickPv.lw||0)<400)return;tickPv.lw=now;const cv=$('cv');if(!cv)return;WPPREV=1;try{wpDraw(cv.getContext('2d'),cv.width,cv.height);}catch(e){}WPPREV=0;};}
+{const v0=vStudio;vStudio=function(app){v0(app);const sg=app.querySelector('.stm .seg');if(!sg)return;
+ sg.append(h('button',{class:P.mode==='wall'?'on':'',onclick:()=>{PVstop();P.mode='wall';ch();openTool('wall');}},ic('wall'),' ',T('Wallpaper')));
+ if(P.mode==='wall'){const st=app.querySelector('.stc');if(st){st.onclick=()=>openTool('wall');const hn=st.querySelector('.hint');if(hn)hn.lastChild.textContent=T('Tap to change the wallpaper');}}};}
+{const s0=shareSheet;shareSheet=function(){if(P.mode==='wall')return openTool('wall');return s0.apply(this,arguments);};}
+Object.assign(AR,{'Wallpaper':'خلفية','This phone':'هذا الهاتف','This screen':'هذه الشاشة','Laptop 16:10':'لابتوب 16:10','Ultrawide':'شاشة عريضة','Phone':'الهاتف','Desktop':'الكمبيوتر',
+ 'Polaroids':'صور بولارويد','Mosaic':'فسيفساء','One big photo':'صورة كبيرة','Circles':'دوائر','Full photo':'صورة كاملة','The design':'التصميم','Arrangement':'الترتيب','Size':'المقاس',
+ 'Add photos for the photo wall':'أضف صوراً لجدار الصور','Leave room for the clock':'اترك مكاناً للساعة','Leave room for the icons and taskbar':'اترك مكاناً للأيقونات وشريط المهام','Show the name':'أظهر الاسم','Shuffle':'رتّب من جديد',
+ 'Colours and background come from the post\'s design. Change them in Design.':'الألوان والخلفية من تصميم المنشور. غيّرها من التصميم.','Save wallpaper':'احفظ الخلفية','Wallpaper saved':'تم حفظ الخلفية','Tap to change the wallpaper':'اضغط لتغيير الخلفية',
+ 'The image could not be made. Try a smaller size.':'تعذّر إنشاء الصورة. جرّب مقاساً أصغر.',
+ 'On iPhone: open the picture in Photos, tap Share, then Use as Wallpaper. On Android: open it and choose Set as wallpaper.':'على الآيفون: افتح الصورة في الصور، اضغط مشاركة ثم استخدام كخلفية. على أندرويد: افتحها واختر تعيين كخلفية.',
+ 'On Windows: right-click the picture and choose Set as desktop background. On Mac: right-click and choose Set Desktop Picture.':'على ويندوز: انقر بزر الفأرة الأيمن على الصورة واختر تعيين كخلفية لسطح المكتب. على الماك: انقر بالزر الأيمن واختر تعيين صورة سطح المكتب.'});
+
 /* ---------- choosing an option keeps the list where it was: the panel, its sideways rows and the page do not jump back to the start ---------- */
 let KSD=0;
 function keepScroll(fn){if(KSD)return fn();const s=$('sheet'),card=s&&s.querySelector('.card'),key=()=>[VIEW,typeof TAB==='undefined'?'':TAB,TOOL||'',s&&!s.hidden?(s.dataset.tool||'sheet'):''].join('|'),k0=key(),top=card?card.scrollTop:0,y=window.scrollY,rows=[...document.querySelectorAll('.row.scroll,.hs')].map(r=>r.scrollLeft);
