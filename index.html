@@ -2293,7 +2293,8 @@ function vxPicks(o){const box=[],row=(L,kind)=>{const keys=L.map(vxKey),all=()=>
  if(o.vids&&vxVids().length)box.push(row(vxVids(),'v'));if(o.msgs&&vxMsgs().length)box.push(row(vxMsgs(),'m'));return box;}
 const VXD={open:1,card:1,photos:1,msgs:1,vids:1,fin:1,len:'song'};
 const vxo=()=>Object.assign({},VXD,P.vx||{});
-const vxSong=()=>{const s=P.vxs;return s===undefined||s===null?P.music:s;};
+/* the export song follows the Music choice unless it was changed in the export sheet after that choice */
+const vxSong=()=>{const s=P.vxs;return s===undefined||s===null||P.vxm!==P.music?P.music:s;};
 const isCustId=v=>v==='own'||String(v).startsWith('md:');
 const vxMsgs=()=>P.guests.filter(g=>g.m&&g.m.trim()&&!(g.med&&MED[g.med]));
 const vxVids=()=>P.guests.filter(g=>g.med&&MED[g.med]);
@@ -2358,7 +2359,7 @@ document.addEventListener('visibilitychange',()=>{if(!VXEL)return;if(document.vi
  const est=h('div',{class:'mr'},ic('timer'),h('b',{},T('Video length')+': …'));
  sheet(h('h3',{},'🎬 '+T('Export video')),
   h('div',{class:'lbl'},T('What to include')),h('div',{class:'row',style:'flex-wrap:wrap;justify-content:flex-start'},chip('open','Opening'),chip('card','Card'),chip('photos','Photos',nP,!nP),chip('msgs','Written messages',sM<nM?sM+'/'+nM:nM,!nM),chip('vids','Video messages',sV<nV?sV+'/'+nV:nV,!nV),chip('fin','Ending card')),vxPicks(o),
-  h('div',{class:'lbl'},T('Song')),h('div',{class:'row',style:'flex-wrap:wrap;justify-content:flex-start'},songs.map(v=>h('button',{class:'chip'+(sg===v?' on':''),onclick:()=>{P.vxs=v;save();exportSheet('video');}},(sg===v?'✓ ':'')+songLabel(v)))),
+  h('div',{class:'lbl'},T('Song')),h('div',{class:'row',style:'flex-wrap:wrap;justify-content:flex-start'},songs.map(v=>h('button',{class:'chip'+(sg===v?' on':''),onclick:()=>{P.vxs=v;P.vxm=P.music;save();exportSheet('video');}},(sg===v?'✓ ':'')+songLabel(v)))),
   isCustId(sg)&&[h('div',{class:'lbl'},T('Length')),h('div',{class:'seg',style:'align-self:flex-start'},[['song',T('Until the song ends')],['content',T('Just the content')]].map(([v,l])=>h('button',{class:o.len===v?'on':'',onclick:()=>set('len',v)},l)))],
   est,h('div',{class:'lbl'},T('Quality')),h('div',{class:'seg',style:'align-self:flex-start'},[['hd','HD'],['fhd','Full HD']].map(([v,l])=>h('button',{class:(P.vq||'hd')===v?'on':'',onclick:()=>{P.vq=v;save();exportSheet('video');}},l))),
   h('button',{class:'btn pri',onclick:makeVideo},T('Create greeting video')+' · '+L2(FMT[P.fmt].n)),h('button',{class:'btn',onclick:makeFilm},'🎞 '+T('Create party film (16:9)')),
@@ -4314,14 +4315,15 @@ async function vxVideoCfg(W,H,br){if(!window.VideoEncoder||!window.VideoFrame||t
  for(const codec of ['avc1.640033','avc1.4d0033','avc1.42e033','avc1.640028','avc1.4d0028','avc1.42e028','avc1.42e01f']){const cfg={codec,width:W,height:H,bitrate:br,framerate:30,avc:{format:'avc'}};try{const r=await VideoEncoder.isConfigSupported(cfg);if(r&&r.supported)return cfg;}catch(e){}}return null;}
 async function vxAudioCfg(){if(!window.AudioEncoder||!window.AudioData||!(window.OfflineAudioContext||window.webkitOfflineAudioContext))return null;
  for(const sr of [48000,44100]){const cfg={codec:'mp4a.40.2',sampleRate:sr,numberOfChannels:2,bitrate:128000};try{const r=await AudioEncoder.isConfigSupported(cfg);if(r&&r.supported)return cfg;}catch(e){}}return null;}
-const vxDecode=async url=>{try{const ab=await (await fetch(url)).arrayBuffer();const A=ac();return await new Promise((res,rej)=>{const p=A.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej);});}catch(e){return null;}};
+/* a song file is read twice if needed: some phones refuse it in one sound context and accept it in another */
+const vxDecode=async(url,o2)=>{for(const A of [ac(),o2].filter(Boolean)){try{const ab=await (await fetch(url)).arrayBuffer();const b=await new Promise((res,rej)=>{const p=A.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej);});if(b&&b.duration>0)return b;}catch(e){}}return null;};
 
 /* the sound track: your song plays during everything except video messages, which play with their own sound */
 async function vxMix(S,sr,say){const TT=S.T,OA=window.OfflineAudioContext||window.webkitOfflineAudioContext,o=new OA(2,Math.ceil((TT+.2)*sr),sr);
  const master=o.createGain();master.gain.setValueAtTime(1,0);master.gain.setValueAtTime(1,Math.max(0,TT-1.2));master.gain.linearRampToValueAtTime(0,TT);const comp=o.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;master.connect(comp);comp.connect(o.destination);
  const runs=[];let a=null;S.forEach(s=>{if(s.vid){if(a!==null){runs.push([a,s.t]);a=null;}}else if(a===null)a=s.t;});if(a!==null)runs.push([a,TT]);
  const sg=S.sg,cu=isCustId(sg),o0=sg==='own'?(P.mus0||0):0,loop=vxo().len!=='song'||S.note==='long';
- if(cu){say(T('Preparing the song…'));const url=sg==='own'?MUSURL:MED[sg.slice(3)],song=url&&await vxDecode(url);
+ if(cu){say(T('Preparing the song…'));const url=sg==='own'?MUSURL:MED[sg.slice(3)],song=url&&await vxDecode(url,o);if(!song)throw new Error('song');
   if(song){const sgG=o.createGain();sgG.gain.value=.8;sgG.connect(master);let pos=o0;
    for(const [ra,rb] of runs){let t=ra;while(t<rb-.01){if(pos>=song.duration-.01){if(!loop)break;pos=o0;}const len=Math.min(rb-t,song.duration-pos);const src=o.createBufferSource(),g=o.createGain();src.buffer=song;src.connect(g);g.connect(sgG);
      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(1,t+.04);g.gain.setValueAtTime(1,Math.max(t+.04,t+len-.06));g.gain.linearRampToValueAtTime(0,t+len);src.start(t,pos,len);pos+=len;t+=len;}}}}
@@ -4329,7 +4331,10 @@ async function vxMix(S,sr,say){const TT=S.T,OA=window.OfflineAudioContext||windo
    RVB=o.createConvolver();const n=Math.floor(sr*2.2),b=o.createBuffer(2,n,sr);for(let ch=0;ch<2;ch++){const d=b.getChannelData(ch);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2.6);}RVB.buffer=b;const rg=o.createGain();rg.gain.value=.9;RVB.connect(rg);rg.connect(MG);NB=null;
    const q=60/tn.bpm,bl=q*tn.b;let bi=0;for(const [ra,rb] of runs){for(let t=ra+.05;t+bl<=rb+.2;t+=bl){tn.id==='hb'?hbBar(bi,t,q):barOf(tn,bi,t,q);bi++;}}}catch(e){}finally{[AC,MG,OUT,RVB,NB]=keep;}}}
  const vids=S.filter(s=>s.vid);let k=0;for(const s of vids){say(T('Preparing the messages…')+' '+(++k)+'/'+vids.length);const buf=await vxDecode(MED[s.med]);if(!buf)continue;const src=o.createBufferSource(),g=o.createGain();src.buffer=buf;g.gain.value=2.2;src.connect(g);g.connect(master);src.start(s.t+.1,0,Math.max(0,Math.min(buf.duration,s.d-.15)));}
- say(T('Mixing the sound…'));return await o.startRendering();}
+ say(T('Mixing the sound…'));const out=await o.startRendering();
+ /* a song was chosen but the mix came out silent: record live instead so the video keeps its sound */
+ if(sg&&sg!=='none'){let pk=0;const d=out.getChannelData(0),st=Math.max(1,Math.floor(d.length/20000));for(let i=0;i<d.length;i+=st){const v=Math.abs(d[i]);if(v>pk)pk=v;}if(pk<1e-4)throw new Error('silent');}
+ return out;}
 
 /* a message video for frame-by-frame capture: muted (its sound is already in the mix), kept in step with the frame being drawn */
 function vxClip(s){const v=document.createElement('video');v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.setAttribute('webkit-playsinline','');v.preload='auto';v.src=MED[s.med];v.style.cssText='width:100%;height:100%;object-fit:cover';return v;}
