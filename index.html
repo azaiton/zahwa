@@ -6807,6 +6807,68 @@ document.head.append(h('style',{},`.lkg{display:grid;grid-template-columns:repea
 .lkbox{margin-bottom:6px}`));
 Object.assign(AR,{'Look: background and colours':'الشكل: الخلفية والألوان','Each picture is your post in that look. Tap one to use it exactly.':'كل صورة هي منشورك بهذا الشكل. اضغط عليها لتحصل عليها كما هي تماماً.','More shades of this look':'درجات أخرى لهذا الشكل','No backgrounds of this style in this tone. Try the other tone.':'لا توجد خلفيات من هذا النوع بهذه الدرجة. جرّب الدرجة الأخرى.'});
 
+/* ---------- Find free music: search open-licence songs inside Zahwa, listen, and tap Use ---------- */
+/* songs come from Openverse (Jamendo, Freesound, Wikimedia). Only licences that allow any use, shops included, and allow putting music to video: CC0, public domain, CC BY, CC BY-SA */
+const FMLIC='cc0,pdm,by,by-sa';
+const FMMOODS=[['happy','Happy','سعيدة'],['celebration party','Celebration','احتفال'],['calm relaxing','Calm','هادئة'],['romantic love','Romantic','رومانسية'],['arabic oriental','Oriental','شرقية'],['kids children','Kids','أطفال'],['upbeat energetic','Upbeat','حماسية'],['piano','Piano','بيانو'],['wedding','Wedding','زفاف'],['acoustic guitar','Guitar','غيتار'],['cinematic epic','Cinematic','سينمائية'],['corporate business','Business','أعمال'],['lofi chill','Chill','هادئة عصرية'],['ambient','Ambient','أجواء']];
+let FM={q:'happy',page:1,items:[],busy:0,more:0,err:0},FMEL=null,FMON=null;
+const fmLicName=x=>({cc0:'CC0',pdm:T('Public domain'),by:'CC BY','by-sa':'CC BY-SA'}[x.license]||String(x.license).toUpperCase())+(x.license_version&&!['cc0','pdm'].includes(x.license)?' '+x.license_version:'');
+const fmCredit=c=>c?T('Music')+': "'+c.t+'"'+(c.by?' '+T('by')+' '+c.by:'')+' ('+c.lic+')'+(c.page?' '+c.page:''):'';
+function fmStop(){if(FMEL){try{FMEL.pause();FMEL.removeAttribute('src');FMEL.load();}catch(e){}}FMEL=null;FMON=null;}
+async function fmSearch(reset){if(FM.busy)return;FM.busy=1;FM.err=0;if(reset){FM.page=1;FM.items=[];}if($('sheet').querySelector('.fmlist'))fmSheet(1);
+ try{const u='https://api.openverse.org/v1/audio/?q='+encodeURIComponent(FM.q)+'&category=music&license='+FMLIC+'&mature=false&page_size=20&page='+FM.page;
+  const r=await fetch(u);if(!r.ok)throw new Error(r.status);const j=await r.json();
+  const got=(j.results||[]).filter(x=>x.url&&(!x.duration||x.duration>=20000)&&FMLIC.split(',').includes(x.license));
+  const seen=new Set(FM.items.map(x=>x.id));FM.items.push(...got.filter(x=>!seen.has(x.id)));FM.more=FM.page<(j.page_count||1);FM.page++;}
+ catch(e){FM.err=1;}FM.busy=0;if($('sheet').querySelector('.fmlist'))fmSheet(1);}
+async function fmUse(x,btn){fmStop();const old=btn.textContent;btn.disabled=true;btn.textContent=T('Downloading…');
+ try{const r=await fetch(x.url);if(!r.ok)throw new Error(r.status);const b=await r.blob();if(b.size<20000)throw new Error('small');
+  const f=new Blob([b],{type:b.type&&b.type.startsWith('audio')?b.type:'audio/mpeg'});await dset('mus',f);if(MUSURL)URL.revokeObjectURL(MUSURL);MUSURL=URL.createObjectURL(f);
+  P.musName=x.title+(x.creator?' · '+x.creator:'');P.musCr={t:x.title,by:x.creator||'',lic:fmLicName(x),page:x.foreign_landing_url||'',need:!['cc0','pdm'].includes(x.license)};P.mus0=0;P.music='own';P.vxs=null;save();DIRTY=1;
+  toast(T('Song added. It plays in your post and video.'));musicSheet();playTune('own');}
+ catch(e){btn.disabled=false;btn.textContent=old;toast(T('This song could not be downloaded. Try another one.'));}}
+function fmSheet(keep){if(!keep)fmStop();
+ const inp=h('input',{type:'search',class:'fmq',placeholder:T('Search music, e.g. happy, piano, wedding'),value:FMMOODS.some(m=>m[0]===FM.q)?'':FM.q,onkeydown:e=>{if(e.key==='Enter'){const v=e.target.value.trim();if(v){FM.q=v;fmSearch(1);}}}});
+ const go=h('button',{class:'btn pri fmgo',onclick:()=>{const v=inp.value.trim();if(v){FM.q=v;fmSearch(1);}}},T('Search'));
+ const moods=h('div',{class:'row scroll fmmoods'},FMMOODS.map(([q,en,ar])=>h('button',{class:'chip'+(FM.q===q?' on':''),onclick:()=>{FM.q=q;fmSearch(1);}},P.lang==='ar'?ar:en)));
+ const rows=FM.items.map(x=>{const on=FMON===x.id,mins=x.duration?fmtT(x.duration/1000):'';
+  return h('div',{class:'fmrow'+(on?' on':'')},
+   h('button',{class:'fmply','aria-label':T('Listen'),onclick:()=>{if(on){fmStop();fmSheet(1);return;}stopMusic();fmStop();FMEL=new Audio();FMEL.src=x.url;FMON=x.id;FMEL.play().catch(()=>{toast(T('This song could not be played. Try another one.'));});FMEL.onended=()=>{fmStop();fmSheet(1);};fmSheet(1);}},on?'⏸':'▶'),
+   h('div',{class:'fmt'},h('b',{dir:'auto'},x.title||T('Untitled')),h('small',{dir:'auto'},[x.creator,mins,fmLicName(x)].filter(Boolean).join(' · '))),
+   h('button',{class:'btn fmuse',onclick:e=>fmUse(x,e.currentTarget)},T('Use')));});
+ const st=FM.busy&&!FM.items.length?h('small',{class:'pgn'},T('Searching…')):FM.err&&!FM.items.length?h('small',{class:'pgn'},T('Could not reach the music library. Check the internet and try again.')):!FM.items.length?h('small',{class:'pgn'},T('No songs found. Try another word in English, like happy or piano.')):'';
+ sheet(h('h3',{},'🔎 '+T('Find free music')),h('small',{},T('Free songs you can use in your posts and videos. Tap ▶ to listen, then Use.')),
+  h('div',{class:'fmbar'},inp,go),moods,h('div',{class:'fmlist'},rows,st),
+  FM.items.length&&FM.more?h('button',{class:'btn',disabled:!!FM.busy,onclick:()=>fmSearch(0)},FM.busy?T('Searching…'):T('More songs')):'',
+  h('small',{class:'fmnote'},T('Songs come from Openverse. Some need the artist named: Zahwa gives you the line to paste under your post.')),
+  h('button',{class:'ghost',onclick:()=>{fmStop();musicSheet();}},'← '+T('Back to Music')));
+ if(!FM.items.length&&!FM.busy&&!FM.err)fmSearch(1);}
+/* the button in the Music screen, and the credit line of a found song */
+{const ms=musicSheet;musicSheet=function(){fmStop();const r=ms.apply(this,arguments);const card=$('sheet').querySelector('.card');if(!card)return r;
+ const own=[...card.querySelectorAll('label.btn')].find(x=>x.querySelector('#f_song'));const b=h('button',{class:'btn pri fmopen',onclick:()=>{stopMusic();fmSheet();}},'🔎 '+T('Find free music'));
+ if(own){own.classList.remove('pri');own.before(b);}else card.querySelector('h3').after(b);
+ if(P.music==='own'&&P.musCr&&P.musCr.need){const ln=fmCredit(P.musCr);const row=[...card.querySelectorAll('.mr')].find(x=>x.textContent.includes(P.musName||'\u0000'));const cr=h('small',{class:'fmcr',dir:'auto'},T('Credit to add under your post')+': '+ln);(row||b).after(cr);}
+ return r;};}
+/* a song from the phone has no credit */
+document.addEventListener('change',e=>{if(e.target&&(e.target.id==='f_song'||e.target.id==='f_mus'))P.musCr=null;},true);
+/* the finished video shows the credit with a copy button when the song needs it */
+{const rs=result;result=function(b,ext){const r=rs.apply(this,arguments);try{const vid=ext==='mp4'||ext==='webm',sg=typeof vxSong==='function'?vxSong():P.music;
+ if(vid&&sg==='own'&&P.musCr&&P.musCr.need){const card=$('sheet').querySelector('.card');if(card){const ln=fmCredit(P.musCr);
+  card.querySelector('h3')&&card.insertBefore(h('div',{class:'fmcrbox'},h('small',{dir:'auto'},T('This song asks you to name the artist. Paste this under your post:')),h('b',{dir:'auto'},ln),h('button',{class:'btn',onclick:()=>{try{navigator.clipboard.writeText(ln).then(()=>toast(T('Copied')),()=>toast(ln));}catch(e){toast(ln);}}},T('Copy credit'))),card.querySelector('h3').nextSibling);}}}catch(e){}return r;};}
+/* famous songs: the platforms license them when you post */
+{const es=exportSheet;exportSheet=function(k){const r=es.apply(this,arguments);if(k!=='video')return r;const card=$('sheet').querySelector('.card');if(!card)return r;
+ const lb=[...card.querySelectorAll('.lbl')].find(x=>x.textContent.trim()===T('Song'));if(lb&&lb.nextElementSibling)lb.nextElementSibling.after(h('small',{class:'fmtip'},'💡 '+T('Want a famous song? Choose No music here, then add the song in Instagram or TikTok when you post. They have the rights to it.')));return r;};}
+document.head.append(h('style',{},`.fmbar{display:flex;gap:8px;margin:10px 0 6px}.fmq{flex:1;min-width:0;min-height:44px;border-radius:12px;padding:0 12px;font:inherit;border:1px solid var(--line,rgba(255,255,255,.18));background:var(--card2,rgba(255,255,255,.06));color:inherit}.fmgo{min-height:44px;padding:0 16px}
+.fmmoods{margin-bottom:8px}.fmlist{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}.fmrow{display:flex;align-items:center;gap:10px;padding:8px;border-radius:14px;background:var(--card2,rgba(255,255,255,.05))}.fmrow.on{outline:2px solid var(--pri)}
+.fmply{width:44px;height:44px;flex-shrink:0;border-radius:50%;border:0;background:var(--pri);color:#fff;font-size:16px}.fmt{flex:1;min-width:0;display:flex;flex-direction:column}.fmt b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fmt small{opacity:.7;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fmuse{min-height:44px;padding:0 14px;flex-shrink:0}.fmnote,.fmtip,.fmcr{display:block;opacity:.75;margin:4px 2px}.fmcrbox{display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:14px;background:var(--card2,rgba(255,255,255,.06));margin:8px 0}`));
+Object.assign(AR,{'Find free music':'ابحث عن موسيقى مجانية','Free songs you can use in your posts and videos. Tap ▶ to listen, then Use.':'أغانٍ مجانية يمكنك استخدامها في منشوراتك وفيديوهاتك. اضغط ▶ للاستماع، ثم «استخدم».','Search music, e.g. happy, piano, wedding':'ابحث بالإنجليزية، مثل happy أو piano','Search':'بحث','Use':'استخدم','Listen':'استمع','Downloading…':'جارٍ التنزيل…',
+ 'Song added. It plays in your post and video.':'أُضيفت الأغنية، وستُسمع في منشورك وفيديوك.','This song could not be downloaded. Try another one.':'تعذّر تنزيل هذه الأغنية. جرّب أغنية أخرى.','This song could not be played. Try another one.':'تعذّر تشغيل هذه الأغنية. جرّب أغنية أخرى.','Searching…':'جارٍ البحث…',
+ 'Could not reach the music library. Check the internet and try again.':'تعذّر الوصول إلى مكتبة الموسيقى. تحقّق من الإنترنت وحاول مرة أخرى.','No songs found. Try another word in English, like happy or piano.':'لم نجد أغاني. جرّب كلمة أخرى بالإنجليزية، مثل happy أو piano.','More songs':'أغانٍ أخرى',
+ 'Songs come from Openverse. Some need the artist named: Zahwa gives you the line to paste under your post.':'الأغاني من مكتبة Openverse. بعضها يطلب ذكر اسم الفنان، وتعطيك زهوة السطر الذي تلصقه تحت منشورك.','Back to Music':'العودة إلى الموسيقى','Untitled':'بلا عنوان','Public domain':'ملكية عامة','Music':'الموسيقى','by':'لـ',
+ 'Credit to add under your post':'اذكر هذا تحت منشورك','This song asks you to name the artist. Paste this under your post:':'هذه الأغنية تطلب ذكر اسم الفنان. الصق هذا تحت منشورك:','Copy credit':'انسخ سطر الذكر','Copied':'تم النسخ',
+ 'Want a famous song? Choose No music here, then add the song in Instagram or TikTok when you post. They have the rights to it.':'تريد أغنية مشهورة؟ اختر «بدون موسيقى» هنا، ثم أضف الأغنية في إنستغرام أو تيك توك عند النشر، فهي تملك حقوقها.'});
+
 /* ---------- choosing an option keeps the list where it was: the panel, its sideways rows and the page do not jump back to the start ---------- */
 let KSD=0;
 function keepScroll(fn){if(KSD)return fn();const s=$('sheet'),card=s&&s.querySelector('.card'),key=()=>[VIEW,typeof TAB==='undefined'?'':TAB,TOOL||'',s&&!s.hidden?(s.dataset.tool||'sheet'):''].join('|'),k0=key(),top=card?card.scrollTop:0,y=window.scrollY,rows=[...document.querySelectorAll('.row.scroll,.hs')].map(r=>r.scrollLeft);
