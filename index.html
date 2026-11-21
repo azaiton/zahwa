@@ -6832,7 +6832,10 @@ function fmStop(){if(FMEL){try{FMEL.pause();FMEL.removeAttribute('src');FMEL.loa
 /* the search keeps the screen still: the old list stays (dimmed) until the new one arrives, and only the list is redrawn */
 async function fmSearch(reset){if(FM.busy)return;FM.busy=1;FM.err=0;FM.reset=!!reset;fmUpd();let got=[],more=FM.more,page=reset?1:FM.page;
  try{const u='https://api.openverse.org/v1/audio/?q='+encodeURIComponent(FM.q)+'&category=music&license='+FMLIC+'&mature=false&page_size=20&page='+page;
-  const r=await fetch(u);if(!r.ok)throw new Error(r.status);const j=await r.json();
+  /* a long search with no songs is tried again with fewer words, so something always comes back */
+  const ask=async q=>{const r=await fetch(u.replace('?q='+encodeURIComponent(FM.q),'?q='+encodeURIComponent(q)));if(!r.ok)throw new Error(r.status);return r.json();};
+  let j=await ask(FM.q);FM.used='';if(reset&&!(j.results||[]).length){const w=FM.q.split(/\s+/).filter(Boolean);for(let n=w.length-1;n>=1&&!(j.results||[]).length;n--){const q=w.slice(0,n).join(' ');j=await ask(q);if((j.results||[]).length)FM.used=q;}
+   if(!(j.results||[]).length&&w.length>1)for(const q of w){j=await ask(q);if((j.results||[]).length){FM.used=q;break;}}}
   got=(j.results||[]).filter(x=>x.url&&(!x.duration||x.duration>=20000)&&FMLIC.split(',').includes(x.license));more=page<(j.page_count||1);
   if(reset){FM.items=[];fmStop();}const seen=new Set(FM.items.map(x=>x.id));FM.items.push(...got.filter(x=>!seen.has(x.id)));FM.more=more;FM.page=page+1;}
  catch(e){FM.err=1;}FM.busy=0;FM.reset=0;fmUpd();if(reset){const l=$('sheet').querySelector('.fmlist');if(l)l.scrollIntoView({block:'nearest'});}}
@@ -6850,7 +6853,7 @@ function fmRows(){return FM.items.map(x=>{const on=FMON===x.id,mins=x.duration?f
 function fmUpd(){const card=$('sheet').querySelector('.card');if(!card)return;const L=card.querySelector('.fmlist'),M=card.querySelector('.fmmore');if(!L)return;
  card.querySelectorAll('.fmmoods .chip').forEach((b,i)=>b.classList.toggle('on',FMMOODS[i][0]===FM.q));
  const st=FM.busy&&(FM.reset||!FM.items.length)?h('small',{class:'pgn fmst'},T('Searching…')):FM.err&&!FM.items.length?h('small',{class:'pgn'},T('Could not reach the music library. Check the internet and try again.')):!FM.items.length&&!FM.busy?h('small',{class:'pgn'},T('No songs found. Try another word in English, like happy or piano.')):'';
- L.classList.toggle('busy',!!(FM.busy&&FM.reset&&FM.items.length));L.replaceChildren(...[st,...fmRows()].filter(Boolean));
+ L.classList.toggle('busy',!!(FM.busy&&FM.reset&&FM.items.length));const used=FM.used&&FM.items.length&&!FM.busy?h('small',{class:'pgn fmst'},T('No songs for all those words. Showing songs for')+' «'+FM.used+'»'):'';L.replaceChildren(...[st,used,...fmRows()].filter(Boolean));
  if(M)M.replaceChildren(...(FM.items.length&&FM.more?[h('button',{class:'btn',disabled:!!FM.busy,onclick:()=>fmSearch(0)},FM.busy&&!FM.reset?T('Searching…'):T('More songs'))]:[]));}
 function fmSheet(){fmStop();stopMusic();
  const run=v=>{v=(v||'').trim();if(v){FM.q=v;fmSearch(1);}};
@@ -6892,8 +6895,17 @@ Object.assign(AR,{'Find free music':'ابحث عن موسيقى مجانية','F
  'Song added. It plays in your post and video.':'أُضيفت الأغنية، وستُسمع في منشورك وفيديوك.','This song could not be downloaded. Try another one.':'تعذّر تنزيل هذه الأغنية. جرّب أغنية أخرى.','This song could not be played. Try another one.':'تعذّر تشغيل هذه الأغنية. جرّب أغنية أخرى.','Searching…':'جارٍ البحث…',
  'Could not reach the music library. Check the internet and try again.':'تعذّر الوصول إلى مكتبة الموسيقى. تحقّق من الإنترنت وحاول مرة أخرى.','No songs found. Try another word in English, like happy or piano.':'لم نجد أغاني. جرّب كلمة أخرى بالإنجليزية، مثل happy أو piano.','More songs':'أغانٍ أخرى',
  'Songs come from Openverse. Some need the artist named: Zahwa gives you the line to paste under your post.':'الأغاني من مكتبة Openverse. بعضها يطلب ذكر اسم الفنان، وتعطيك زهوة السطر الذي تلصقه تحت منشورك.','Back to Music':'العودة إلى الموسيقى','Untitled':'بلا عنوان','Public domain':'ملكية عامة','Music':'الموسيقى','by':'لـ',
- 'Credit to add under your post':'اذكر هذا تحت منشورك','This song asks you to name the artist. Paste this under your post:':'هذه الأغنية تطلب ذكر اسم الفنان. الصق هذا تحت منشورك:','Party show music (optional)':'موسيقى عرض الحفلة (اختياري)','Only for the live party show. Your posts and videos use the music above.':'خاصة بعرض الحفلة المباشر فقط. منشوراتك وفيديوهاتك تستخدم الموسيقى أعلاه.','Copy credit':'انسخ سطر الذكر','Copied':'تم النسخ',
+ 'Credit to add under your post':'اذكر هذا تحت منشورك','This song asks you to name the artist. Paste this under your post:':'هذه الأغنية تطلب ذكر اسم الفنان. الصق هذا تحت منشورك:','Party show music (optional)':'موسيقى عرض الحفلة (اختياري)','Only for the live party show. Your posts and videos use the music above.':'خاصة بعرض الحفلة المباشر فقط. منشوراتك وفيديوهاتك تستخدم الموسيقى أعلاه.','No songs for all those words. Showing songs for':'لا توجد أغانٍ لكل هذه الكلمات. نعرض أغاني لـ','Copy credit':'انسخ سطر الذكر','Copied':'تم النسخ',
  'Want a famous song? Choose No music here, then add the song in Instagram or TikTok when you post. They have the rights to it.':'تريد أغنية مشهورة؟ اختر «بدون موسيقى» هنا، ثم أضف الأغنية في إنستغرام أو تيك توك عند النشر، فهي تملك حقوقها.'});
+
+/* ---------- a new version: Zahwa checks the site when it opens or comes back, and offers a one-tap update ---------- */
+const ZV='1795259343';let ZVNEW=null;
+async function zvCheck(){if(ZVNEW||!/^https?:/.test(location.protocol)||/claude\.ai|claudeusercontent/.test(location.host))return;
+ try{const r=await fetch(location.pathname+'?zv='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text(),m=t.match(/const ZV='(\d+)'/);if(!m||m[1]===ZV||+m[1]<+ZV)return;ZVNEW=m[1];zvShow();}catch(e){}}
+function zvShow(){if($('zvbar'))return;const b=h('button',{id:'zvbar',onclick:()=>{b.textContent=T('Updating…');try{save();}catch(e){}setTimeout(()=>location.replace(location.pathname+'?v='+ZVNEW),350);}},'✨ '+T('New version of Zahwa. Tap to update.'));document.body.append(b);}
+setTimeout(zvCheck,4000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')zvCheck();});setInterval(zvCheck,20*60*1000);
+document.head.append(h('style',{},`#zvbar{position:fixed;z-index:9999;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));max-width:calc(100% - 32px);min-height:44px;padding:10px 18px;border:0;border-radius:999px;background:linear-gradient(90deg,#ff4f9a,#ff9a5a);color:#fff;font:inherit;font-weight:800;box-shadow:0 8px 26px rgba(0,0,0,.4);animation:zvin .35s ease-out}@keyframes zvin{from{opacity:0;transform:translate(-50%,-14px)}}`));
+Object.assign(AR,{'New version of Zahwa. Tap to update.':'نسخة جديدة من زهوة. اضغط للتحديث.','Updating…':'جارٍ التحديث…'});
 
 /* ---------- choosing an option keeps the list where it was: the panel, its sideways rows and the page do not jump back to the start ---------- */
 let KSD=0;
