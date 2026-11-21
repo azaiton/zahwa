@@ -4352,8 +4352,8 @@ async function encodeVideo(vc,acfg){const S=await vxPlan(),kq=P.vq==='fhd'?1.5:1
  try{try{frame(c,W,H,0,S);}catch(e){}
   const mix=await vxMix(S,acfg.sampleRate,say);if(stop)throw 0;
   muxer=new Mp4Muxer.Muxer({target:new Mp4Muxer.ArrayBufferTarget(),video:{codec:'avc',width:W,height:H,frameRate:FPS},audio:{codec:'aac',numberOfChannels:2,sampleRate:acfg.sampleRate},fastStart:'in-memory',firstTimestampBehavior:'offset'});
-  venc=new VideoEncoder({output:(ch,m)=>muxer.addVideoChunk(ch,m),error:e=>{err=e;}});venc.configure(vc);
-  aenc=new AudioEncoder({output:(ch,m)=>vxAacOut(muxer,ch,m,acfg),error:e=>{err=e;}});aenc.configure(Object.assign({},acfg,{aac:{format:'aac'}}));
+  let vOut=0;const aKeep=[];venc=new VideoEncoder({output:(ch,m)=>{vOut++;muxer.addVideoChunk(ch,m);},error:e=>{err=e;}});venc.configure(vc);
+  aenc=new AudioEncoder({output:(ch,m)=>vxAacOut(muxer,ch,m,acfg,aKeep),error:e=>{err=e;}});aenc.configure(Object.assign({},acfg,{aac:{format:'aac'}}));
   say(T('Adding the sound…'));const L=mix.getChannelData(0),R=mix.numberOfChannels>1?mix.getChannelData(1):L,n=mix.length,B=4096;
   for(let i=0;i<n;i+=B){const m=Math.min(B,n-i),d=new Float32Array(m*2);d.set(L.subarray(i,i+m),0);d.set(R.subarray(i,i+m),m);const ad=new AudioData({format:'f32-planar',sampleRate:acfg.sampleRate,numberOfFrames:m,numberOfChannels:2,timestamp:Math.round(i/acfg.sampleRate*1e6),data:d});aenc.encode(ad);ad.close();
    if(aenc.encodeQueueSize>20)await new Promise(r=>setTimeout(r,2));}
@@ -4370,24 +4370,38 @@ async function encodeVideo(vc,acfg){const S=await vxPlan(),kq=P.vq==='fhd'?1.5:1
    if(performance.now()-last>40){last=performance.now();await new Promise(r=>setTimeout(r,0));}}
   if(clip){clip.pause();clip.remove();}
   say(T('Finishing…'));await venc.flush();if(err)throw err;muxer.finalize();
-  const blob=new Blob([muxer.target.buffer],{type:'video/mp4'});if(S.sg&&S.sg!=='none'){say(T('Checking the sound…'));if(!(await vxHasSound(blob)))throw new Error('silent-out');}BUSY=0;holdHide();result(blob,'mp4');}
+  /* every frame must have come out of the encoder, or the picture would stop while the sound goes on */
+  if(vOut<N*.98)throw new Error('frames '+vOut+'/'+N);
+  if(S.sg&&S.sg!=='none'){say(T('Checking the sound…'));if(!(await vxAacTest(aKeep,mix,acfg)))throw new Error('silent-out');}
+  const blob=new Blob([muxer.target.buffer],{type:'video/mp4'});BUSY=0;holdHide();VXWAY='frames';result(blob,'mp4');}
  catch(e){BUSY=0;try{venc&&venc.state!=='closed'&&venc.close();}catch(x){}try{aenc&&aenc.state!=='closed'&&aenc.close();}catch(x){}holdHide();
   if(e===0){closeSheet();return;}console.error(e);throw e;}}
 
 {const mv=makeVideo;makeVideo=function(){if(BUSY)return;vxUnlock();return (async()=>{let vc=null,acfg=null;try{await fontsReady();const kq=P.vq==='fhd'?1.5:1,W=Math.round(FMT[P.fmt].v[0]*kq/2)*2,H=Math.round(FMT[P.fmt].v[1]*kq/2)*2;vc=await vxVideoCfg(W,H,Math.round(4e6*kq*kq));acfg=vc&&await vxAudioCfg();}catch(e){}
-  if(vc&&acfg){try{return await encodeVideo(vc,acfg);}catch(e){BUSY=0;if(e===0)return;toast(T('This way of making the video failed here, so it is recorded live instead.'));}}
-  return vxLive(mv);})();};}
+  if(vc&&acfg){try{return await encodeVideo(vc,acfg);}catch(e){BUSY=0;if(e===0)return;VXWHY=String(e&&e.message||e).slice(0,60);toast(T('This way of making the video failed here, so it is recorded live instead.'));}}else VXWHY=!vc?'no video encoder':'no audio encoder';
+  VXWAY='live';return vxLive(mv);})();};}
 Object.assign(AR,{'Preparing…':'جارٍ التحضير…','Preparing the song…':'جارٍ تحضير الأغنية…','Preparing the messages…':'جارٍ تحضير الرسائل…','Mixing the sound…':'جارٍ دمج الصوت…','Adding the sound…':'جارٍ إضافة الصوت…','Drawing the video…':'جارٍ رسم الفيديو…','Finishing…':'جارٍ الإنهاء…',
  'This way of making the video failed here, so it is recorded live instead.':'تعذّرت هذه الطريقة هنا، لذا يُسجَّل الفيديو مباشرة بدلاً منها.'});
 
 /* ---------- sound that survives every phone ---------- */
 /* some phones hand over AAC sound without its setup bytes, or wrapped in ADTS headers: players then treat the track as silent */
 function vxAsc(sr,chn){const F=[96000,88200,64000,48000,44100,32000,24000,22050,16000,12000,11025,8000],fi=Math.max(0,F.indexOf(sr));return new Uint8Array([(2<<3)|(fi>>1),((fi&1)<<7)|(chn<<3)]);}
-function vxAacOut(mx,ch,m,acfg){m=m||{};const dc=m.decoderConfig;if(dc&&!(dc.description&&dc.description.byteLength)){m=Object.assign({},m,{decoderConfig:Object.assign({},dc,{codec:dc.codec||'mp4a.40.2',sampleRate:dc.sampleRate||acfg.sampleRate,numberOfChannels:dc.numberOfChannels||2,description:vxAsc(dc.sampleRate||acfg.sampleRate,dc.numberOfChannels||2)})});}
+function vxAacOut(mx,ch,m,acfg,keep){m=m||{};const dc=m.decoderConfig;if(dc&&!(dc.description&&dc.description.byteLength)){m=Object.assign({},m,{decoderConfig:Object.assign({},dc,{codec:dc.codec||'mp4a.40.2',sampleRate:dc.sampleRate||acfg.sampleRate,numberOfChannels:dc.numberOfChannels||2,description:vxAsc(dc.sampleRate||acfg.sampleRate,dc.numberOfChannels||2)})});}
  const d=new Uint8Array(ch.byteLength);ch.copyTo(d);let o=0;if(d.length>7&&d[0]===0xFF&&(d[1]&0xF6)===0xF0)o=(d[1]&1)?7:9;
- mx.addAudioChunkRaw(o?d.subarray(o):d,ch.type,ch.timestamp,ch.duration||Math.round(1024/acfg.sampleRate*1e6),m);}
+ const data=o?d.subarray(o):d,dur=ch.duration||Math.round(1024/acfg.sampleRate*1e6);mx.addAudioChunkRaw(data,ch.type,ch.timestamp,dur,m);
+ if(keep){if(m.decoderConfig&&!keep.meta)keep.meta=m;keep.push([data,ch.type,ch.timestamp,dur]);}}
+/* the sound is checked on a short piece: three seconds where the song is loud, packed and played back by this phone itself */
+async function vxAacTest(keep,mix,acfg){try{if(!keep.length||!keep.meta)return false;const L=mix.getChannelData(0),sr=acfg.sampleRate;let i0=0;for(let i=0;i<L.length;i+=64)if(Math.abs(L[i])>.02){i0=i;break;}
+ const t0=Math.max(0,i0/sr-.2)*1e6,t1=t0+3e6,pick=keep.filter(k=>k[2]>=t0&&k[2]<t1);if(!pick.length)return false;
+ const mx=new Mp4Muxer.Muxer({target:new Mp4Muxer.ArrayBufferTarget(),audio:{codec:'aac',numberOfChannels:2,sampleRate:sr},fastStart:'in-memory',firstTimestampBehavior:'offset'});
+ pick.forEach((k,j)=>mx.addAudioChunkRaw(k[0],'key',k[2],k[3],j?undefined:keep.meta));mx.finalize();
+ const b=await new Promise((res,rej)=>{const p=ac().decodeAudioData(mx.target.buffer,res,rej);if(p&&p.then)p.then(res,rej);});let pk=0;const d=b.getChannelData(0);for(let i=0;i<d.length;i+=16){const v=Math.abs(d[i]);if(v>pk)pk=v;}return pk>1e-3;}catch(e){return false;}}
+let VXWAY='',VXWHY='';
+/* a small grey line under each finished video says how it was made, so a problem can be traced */
+{const rs=result;result=function(b,ext){const r=rs.apply(this,arguments);try{if((ext==='mp4'||ext==='webm')&&VXWAY){const card=$('sheet').querySelector('.card');if(card)card.append(h('small',{class:'vxway',dir:'ltr'},(VXWAY==='frames'?'✓ '+T('Made frame by frame'):'● '+T('Recorded live')+(VXWHY?' · '+VXWHY:''))+' · '+(b.size/1048576).toFixed(1)+' MB'));}}catch(e){}VXWAY='';VXWHY='';return r;};}
+document.head.append(h('style',{},'.vxway{display:block;opacity:.45;font-size:11px;text-align:center;margin-top:6px}'));
 /* reads the finished video back and listens for sound */
-async function vxHasSound(blob){try{const A=ac();const ab=await blob.arrayBuffer();const b=await new Promise((res,rej)=>{const p=A.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej);});let pk=0;for(let c=0;c<b.numberOfChannels;c++){const d=b.getChannelData(c),st=Math.max(1,Math.floor(d.length/40000));for(let i=0;i<d.length;i+=st){const v=Math.abs(d[i]);if(v>pk)pk=v;}}return pk>1e-4;}catch(e){return false;}}
+async function vxHasSound(blob){try{const A=ac();const ab=await blob.arrayBuffer();const b=await new Promise((res,rej)=>{const p=A.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej);});let pk=0;for(let c=0;c<b.numberOfChannels;c++){const d=b.getChannelData(c),st=Math.max(1,Math.floor(d.length/40000));for(let i=0;i<d.length;i+=st){const v=Math.abs(d[i]);if(v>pk)pk=v;}}return pk>1e-4;}catch(e){return null;}}
 /* a song file played straight into the recording as decoded sound, not through a media element some phones keep silent */
 class VxBufEl{constructor(buf,o0){this.buf=buf;this.o0=o0;this.pos=o0;this.paused=true;this.loop=true;this.onended=null;this.onloadedmetadata=null;this.readyState=4;this.duration=buf.duration;this.src='';this._s=null;}
  get currentTime(){if(this.paused||!this._s)return this.pos;let t=this._p0+(AC.currentTime-this._t0);const d=this.buf.duration;if(this._s.loop&&t>=d)t=this.o0+((t-this.o0)%Math.max(.1,d-this.o0));return Math.min(t,d);}
@@ -4404,8 +4418,8 @@ async function vxLive(mv){const sg=vxSong();if(!isCustId(sg)||!ac())return mv();
  const real=musEl;stopMusic();musEl=new VxBufEl(buf,sg==='own'?(P.mus0||0):0);
  const or=result;let got=null;result=function(b,ext){got=[b,ext];};
  try{await mv();}finally{try{musEl.pause();}catch(e){}musEl=real;result=or;}
- if(got){or(got[0],got[1]);if(!(await vxHasSound(got[0])))toast(T('This phone saved the video without its sound. Try again, or record the screen while the video plays.'));}}
-Object.assign(AR,{'Checking the sound…':'جارٍ فحص الصوت…','This phone saved the video without its sound. Try again, or record the screen while the video plays.':'حفظ هذا الهاتف الفيديو بدون صوت. حاول مرة أخرى، أو سجّل الشاشة أثناء تشغيل الفيديو.'});
+ if(got){VXWAY='live';or(got[0],got[1]);if((await vxHasSound(got[0]))===false)toast(T('This phone saved the video without its sound. Try again, or record the screen while the video plays.'));}}
+Object.assign(AR,{'Made frame by frame':'صُنع إطاراً بإطار','Recorded live':'سُجّل مباشرة','Checking the sound…':'جارٍ فحص الصوت…','This phone saved the video without its sound. Try again, or record the screen while the video plays.':'حفظ هذا الهاتف الفيديو بدون صوت. حاول مرة أخرى، أو سجّل الشاشة أثناء تشغيل الفيديو.'});
 
 /* ---------- motion design 2: story-grade video — colour blocks, kinetic type, drawn shapes, designed transitions ---------- */
 const M2={eo:u=>1-Math.pow(1-clamp(u),3),eio:u=>{u=clamp(u);return u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;}};
